@@ -969,6 +969,18 @@ config SURFACE_PRO3_BUTTON
 	---help---
 	  This driver handles the power/home/volume buttons on the Microsoft Surface Pro 3 tablet.
 
+config UP_BOARD
+	bool "UP Board platform extras"
+	depends on PINCTRL_CHERRYVIEW
+	select GPIOLIB_IRQCHIP
+	---help---
+	This driver initialises platform devices on the UP board.
+	It creates a "virtual" GPIO chip to transparently manage the
+	buffers and mux switches between the SoC GPIO pins and the external
+	pin header.  The pins are numbered to match the Raspberry Pi 2 layout
+	for compatibility reasons.
+
+
 config INTEL_PUNIT_IPC
 	tristate "Intel P-Unit IPC Driver"
 	---help---
