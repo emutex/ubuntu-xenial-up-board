@@ -95,10 +95,19 @@ static int dw_i2c_acpi_configure(struct platform_device *pdev)
 {
 	struct dw_i2c_dev *dev = platform_get_drvdata(pdev);
 	const struct acpi_device_id *id;
+	struct acpi_device *adev;
+	int busno;
 
 	dev->adapter.nr = -1;
 	dev->tx_fifo_depth = 32;
 	dev->rx_fifo_depth = 32;
+
+	adev = ACPI_COMPANION(&pdev->dev);
+	if (!adev)
+		return -ENODEV;
+
+	if (adev->pnp.unique_id && !kstrtoint(adev->pnp.unique_id, 0, &busno))
+		dev->adapter.nr = busno - 1;
 
 	/*
 	 * Try to get SDA hold time and *CNT values from an ACPI method if
