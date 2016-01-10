@@ -64,7 +64,7 @@ obj-$(CONFIG_PVPANIC)           += pvpanic.o
 obj-$(CONFIG_ALIENWARE_WMI)	+= alienware-wmi.o
 obj-$(CONFIG_INTEL_PMC_IPC)	+= intel_pmc_ipc.o
 obj-$(CONFIG_SURFACE_PRO3_BUTTON)	+= surfacepro3_button.o
-obj-$(CONFIG_UP_BOARD)		+= up_board.o up_board_gpio.o
+obj-$(CONFIG_UP_BOARD)		+= up_board.o up_board_pinctrl.o
 obj-$(CONFIG_INTEL_PUNIT_IPC)  += intel_punit_ipc.o
 obj-$(CONFIG_INTEL_TELEMETRY)	+= intel_telemetry_core.o \
 				   intel_telemetry_pltdrv.o \
