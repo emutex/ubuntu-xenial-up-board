@@ -23,11 +23,15 @@
 #include <linux/pinctrl/machine.h>
 #include <linux/pinctrl/pinconf-generic.h>
 #include <linux/i2c.h>
+#include <linux/spi/spi.h>
 #include <linux/platform_data/pca953x.h>
 
 #define UP_BOARD_GPIO_EXP_I2C_BUS 5
 #define UP_BOARD_GPIO_EXP0_BASE   32
 #define UP_BOARD_GPIO_EXP1_BASE   48
+
+#define UP_BOARD_SPIDEV_BUS_NUM 2
+#define UP_BOARD_SPIDEV_MAX_CLK 25000000
 
 struct up_board_info {
 	struct pinctrl_map *pinmux_maps;
@@ -35,6 +39,10 @@ struct up_board_info {
 	struct i2c_board_info *i2c_devices;
 	unsigned num_i2c_devices;
 };
+
+static bool spidev0 = true;
+module_param(spidev0, bool, S_IRUGO);
+MODULE_PARM_DESC(spidev0, "register a spidev device on SPI bus 2-0");
 
 static unsigned long i2c_pullup_conf[] = {
 	PIN_CONF_PACKED(PIN_CONFIG_BIAS_PULL_UP, 5000),
@@ -100,6 +108,13 @@ static struct i2c_board_info up_i2c_devices_v0_2[] __initdata = {
 		I2C_BOARD_INFO("pca9555", 0x23),
 		.platform_data = &gpio_exp1_pdata,
 	},
+};
+
+static struct spi_board_info up_spidev0_info __initdata = {
+	.modalias	= "spidev",
+	.bus_num	= UP_BOARD_SPIDEV_BUS_NUM,
+	.chip_select	= 0,
+	.max_speed_hz   = UP_BOARD_SPIDEV_MAX_CLK,
 };
 
 static struct up_board_info up_board_info_v0_1 = {
@@ -177,6 +192,14 @@ up_board_init(void)
 		}
 	}
 
+	if (spidev0) {
+		ret = spi_register_board_info(&up_spidev0_info, 1);
+		if (ret) {
+			pr_err("Failed to register UP Board spidev0 device");
+			goto fail_spidev0_register;
+		}
+	}
+
 	/* Create a virtual device to manage the UP Board GPIO pin header */
 	up_pinctrl_dev = platform_device_alloc("up-pinctrl", -1);
 	if (!up_pinctrl_dev) {
@@ -192,6 +215,7 @@ up_board_init(void)
 fail_pinctrl_dev_add:
 	platform_device_put(up_pinctrl_dev);
 fail_pinctrl_dev_alloc:
+fail_spidev0_register:
 fail_i2c_register:
 fail_pinctrl_reg:
 	return ret;
