@@ -227,7 +227,10 @@ up_board_exit(void)
 	platform_device_unregister(up_pinctrl_dev);
 }
 
-module_init(up_board_init);
+/* Using subsys_initcall to ensure that pinctrl mappings are registered
+ * before corresponding devices are enumerated
+ */
+subsys_initcall(up_board_init);
 module_exit(up_board_exit);
 
 MODULE_AUTHOR("Dan O'Donovan <dan@emutex.com>");
