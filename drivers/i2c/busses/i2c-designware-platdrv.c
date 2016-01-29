@@ -93,21 +93,15 @@ static void dw_i2c_acpi_params(struct platform_device *pdev, char method[],
 
 static void dw_i2c_acpi_freq_param(struct platform_device *pdev, u32 *freq)
 {
-	struct acpi_buffer buf = { ACPI_ALLOCATE_BUFFER };
 	acpi_handle handle = ACPI_HANDLE(&pdev->dev);
-	union acpi_object *obj;
+	unsigned long long tmp;
 
-	if (ACPI_FAILURE(acpi_evaluate_object(handle, "FREQ", NULL, &buf)))
+	if (ACPI_FAILURE(acpi_evaluate_integer(handle, "FREQ", NULL, &tmp)))
 		return;
 
-	obj = (union acpi_object *)buf.pointer;
-	if (obj->type == ACPI_TYPE_PACKAGE && obj->package.count == 1) {
-		const union acpi_object *objs = obj->package.elements;
-
-		*freq = (u32)objs[0].integer.value;
-	}
-
-	kfree(buf.pointer);
+	*freq = (u32)tmp;
+	dev_dbg(&pdev->dev, "%u Hz bus speed specified by 'FREQ' ACPI method\n",
+		*freq);
 }
 
 static int dw_i2c_acpi_configure(struct platform_device *pdev, u32 *freq)
@@ -135,6 +129,7 @@ static int dw_i2c_acpi_configure(struct platform_device *pdev, u32 *freq)
 	dw_i2c_acpi_params(pdev, "SSCN", &dev->ss_hcnt, &dev->ss_lcnt, NULL);
 	dw_i2c_acpi_params(pdev, "FMCN", &dev->fs_hcnt, &dev->fs_lcnt,
 			   &dev->sda_hold_time);
+
 	/* Try to get default speed mode from an ACPI method if it exists */
 	dw_i2c_acpi_freq_param(pdev, freq);
 
