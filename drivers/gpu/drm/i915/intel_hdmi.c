@@ -1335,7 +1335,7 @@ intel_hdmi_set_edid(struct drm_connector *connector)
 {
 	struct drm_i915_private *dev_priv = to_i915(connector->dev);
 	struct intel_hdmi *intel_hdmi = intel_attached_hdmi(connector);
-	struct edid *edid;
+	struct edid *edid = NULL;
 	bool connected = false;
 
 	intel_display_power_get(dev_priv, POWER_DOMAIN_GMBUS);
