@@ -31,7 +31,7 @@
 /*
  * The UP Board features an external 40-pin header for I/O functions including
  * GPIO, I2C, UART, SPI, PWM and I2S, similar in layout to the Raspberry Pi 2.
- * At the heart of the UP Board is an Intel X5-Z8300 "Cherry Trail" SoC, which
+ * At the heart of the UP Board is an Intel X5-Z8350 "Cherry Trail" SoC, which
  * provides the I/O functions for these pins at 1.8V logic levels.
  *
  * Additional buffers and mux switches are used between the SoC and the I/O pin
@@ -59,6 +59,7 @@ struct up_soc_gpio_info {
 	struct up_soc_gpiochip_info *ci;
 	struct gpio_desc *desc;
 	unsigned offset;
+	int gpio;
 	int irq;
 };
 
@@ -66,17 +67,36 @@ struct up_soc_gpio_info {
 struct up_pin_info {
 	struct up_soc_gpio_info soc_gpio;
 	int irq;
-	int dir_gpio;
+	int dir_ctrl_pin;
+	int dir_in;
+	int dir_out;
 	int func_dir;
+	int mux_ctrl_pin;
 	int mux_gpio;
-	int func_mux;
-	bool func_sel;
+	int mux_func;
+	bool func_enabled;
+};
+
+/* Information for the CPLD featured on later UP board revisions */
+struct up_cpld_info {
+	struct up_soc_gpio_info strobe_gpio;
+	struct up_soc_gpio_info reset_gpio;
+	struct up_soc_gpio_info data_gpio;
+	struct up_soc_gpio_info oe_gpio;
+	u32 dir_reg;
+	bool do_verify;
+};
+
+struct up_board_info {
+	struct up_pin_info *pins;
+	struct up_cpld_info *cpld;
+	int pincfg_mode;
 };
 
 /* Context variables for this driver */
 struct up_pctrl {
+	struct up_board_info *board;
 	struct gpio_chip chip;
-	struct up_pin_info *pin_info;
 	struct pinctrl_desc pctldesc;
 	struct pinctrl_dev *pctldev;
 };
@@ -101,16 +121,25 @@ static struct up_soc_gpiochip_info chip_cht_N  = { .name = "INT33FF:01" };
 static struct up_soc_gpiochip_info chip_cht_E  = { .name = "INT33FF:02" };
 static struct up_soc_gpiochip_info chip_cht_SE = { .name = "INT33FF:03" };
 
-#define GPIO_PIN(c, o, d, f, m, x)	\
-	{				\
-		.soc_gpio.ci = (c),	\
-		.soc_gpio.offset = (o),	\
-		.dir_gpio = (d),	\
-		.func_dir = (f),	\
-		.mux_gpio = (m),	\
-		.func_mux = (x),	\
-		.func_sel = false,	\
+#define GPIO_PIN(c, o, dpin, din, dout, dfunc, mpin, mgpio, mfunc) \
+	{						\
+		.soc_gpio.ci		= (c),		\
+		.soc_gpio.offset	= (o),		\
+		.dir_ctrl_pin		= (dpin),	\
+		.dir_in			= (din),	\
+		.dir_out		= (dout),	\
+		.func_dir		= (dfunc),	\
+		.mux_ctrl_pin		= (mpin),	\
+		.mux_gpio		= (mgpio),	\
+		.mux_func		= (mfunc),	\
+		.func_enabled		= false,	\
 	}
+
+#define FDIR_NONE -1
+#define FDIR_OUT  1
+#define FDIR_IN   0
+
+#define NONE -1
 
 #define PIN_GROUP(n, p)				\
 	{					\
@@ -134,81 +163,154 @@ static struct up_soc_gpiochip_info chip_cht_SE = { .name = "INT33FF:03" };
 
 #define N_GPIO 28
 
-#define DIR_NONE -1
-#define DIR_OUT  1
-#define DIR_IN   0
+#define CPLD_REG_SIZE		(31)
 
-#define MUX_NONE -1
-#define MUX_GPIO 0
-#define MUX_FUNC 1
+/* Initial configuration assumes all pins as GPIO inputs */
+#define CPLD_DIR_REG_INIT	(0x0FFFFFFF)
+
+/* Different mechanisms for controlling UP board header pin configurations */
+enum {
+	UP_PINCFG_MODE_NONE = 0,	/* No control signals required */
+	UP_PINCFG_MODE_GPIO,		/* Pin control driven by GPIO signals */
+	UP_PINCFG_MODE_CPLD,		/* Pin control driven by custom CPLD */
+};
+
+/* Convenience macros to populate the pin info tables below */
+#define GPIO_PIN_V0_1(c, o) \
+	GPIO_PIN(c, o, NONE, -1, -1, FDIR_NONE, NONE, -1, -1)
+#define GPIO_PIN_V0_2(c, o, dpin, dfunc, mpin, mgpio, mfunc)	\
+	GPIO_PIN(c, o, dpin, 0, 1, dfunc, mpin, mgpio, mfunc)
+#define GPIO_PIN_V0_2_NO_MUX(c, o, dpin, dfunc)	\
+	GPIO_PIN_V0_2(c, o, dpin, dfunc, NONE, -1, -1)
+#define GPIO_PIN_V0_3(c, o, dpin, dfunc, mpin, mgpio, mfunc)	\
+	GPIO_PIN(c, o, dpin, 1, 0, dfunc, mpin, mgpio, mfunc)
+#define GPIO_PIN_V0_3_NO_MUX(c, o, dpin, dfunc)			\
+	GPIO_PIN_V0_3(c, o, dpin, dfunc, NONE, -1, -1)
 
 /*
  * Table of I/O pins on the 40-pin header of the UP Board (version-specific)
  */
 /* UP Board v0.1 uses auto-sensing level shifters on each pin */
 static struct up_pin_info up_pins_v0_1[N_GPIO] = {
-	GPIO_PIN(&chip_cht_SW, 33, -1, DIR_NONE, -1, -1), /*  0 */
-	GPIO_PIN(&chip_cht_SW, 37, -1, DIR_NONE, -1, -1), /*  1 */
-	GPIO_PIN(&chip_cht_SW, 32, -1, DIR_NONE, -1, -1), /*  2 */
-	GPIO_PIN(&chip_cht_SW, 35, -1, DIR_NONE, -1, -1), /*  3 */
-	GPIO_PIN(&chip_cht_SE,  7, -1, DIR_NONE, -1, -1), /*  4 */
-	GPIO_PIN(&chip_cht_SE,  4, -1, DIR_NONE, -1, -1), /*  5 */
-	GPIO_PIN(&chip_cht_SE,  3, -1, DIR_NONE, -1, -1), /*  6 */
-	GPIO_PIN(&chip_cht_N,  41, -1, DIR_NONE, -1, -1), /*  7 */
-	GPIO_PIN(&chip_cht_N,  36, -1, DIR_NONE, -1, -1), /*  8 */
-	GPIO_PIN(&chip_cht_E,  17, -1, DIR_NONE, -1, -1), /*  9 */
-	GPIO_PIN(&chip_cht_E,  23, -1, DIR_NONE, -1, -1), /* 10 */
-	GPIO_PIN(&chip_cht_E,  14, -1, DIR_NONE, -1, -1), /* 11 */
-	GPIO_PIN(&chip_cht_SE,  1, -1, DIR_NONE, -1, -1), /* 12 */
-	GPIO_PIN(&chip_cht_SE,  5, -1, DIR_NONE, -1, -1), /* 13 */
-	GPIO_PIN(&chip_cht_SW, 13, -1, DIR_NONE, -1, -1), /* 14 */
-	GPIO_PIN(&chip_cht_SW,  9, -1, DIR_NONE, -1, -1), /* 15 */
-	GPIO_PIN(&chip_cht_N,   6, -1, DIR_NONE, -1, -1), /* 16 */
-	GPIO_PIN(&chip_cht_SE,  6, -1, DIR_NONE, -1, -1), /* 17 */
-	GPIO_PIN(&chip_cht_SW, 17, -1, DIR_NONE, -1, -1), /* 18 */
-	GPIO_PIN(&chip_cht_SW, 21, -1, DIR_NONE, -1, -1), /* 19 */
-	GPIO_PIN(&chip_cht_SW, 19, -1, DIR_NONE, -1, -1), /* 20 */
-	GPIO_PIN(&chip_cht_SW, 16, -1, DIR_NONE, -1, -1), /* 21 */
-	GPIO_PIN(&chip_cht_N,   3, -1, DIR_NONE, -1, -1), /* 22 */
-	GPIO_PIN(&chip_cht_N,   2, -1, DIR_NONE, -1, -1), /* 23 */
-	GPIO_PIN(&chip_cht_N,   1, -1, DIR_NONE, -1, -1), /* 24 */
-	GPIO_PIN(&chip_cht_SW, 14, -1, DIR_NONE, -1, -1), /* 25 */
-	GPIO_PIN(&chip_cht_N,   7, -1, DIR_NONE, -1, -1), /* 26 */
-	GPIO_PIN(&chip_cht_SW, 10, -1, DIR_NONE, -1, -1), /* 27 */
+	GPIO_PIN_V0_1(&chip_cht_SW, 33), /*  0 */
+	GPIO_PIN_V0_1(&chip_cht_SW, 37), /*  1 */
+	GPIO_PIN_V0_1(&chip_cht_SW, 32), /*  2 */
+	GPIO_PIN_V0_1(&chip_cht_SW, 35), /*  3 */
+	GPIO_PIN_V0_1(&chip_cht_SE,  7), /*  4 */
+	GPIO_PIN_V0_1(&chip_cht_SE,  4), /*  5 */
+	GPIO_PIN_V0_1(&chip_cht_SE,  3), /*  6 */
+	GPIO_PIN_V0_1(&chip_cht_N,  41), /*  7 */
+	GPIO_PIN_V0_1(&chip_cht_N,  36), /*  8 */
+	GPIO_PIN_V0_1(&chip_cht_E,  17), /*  9 */
+	GPIO_PIN_V0_1(&chip_cht_E,  23), /* 10 */
+	GPIO_PIN_V0_1(&chip_cht_E,  14), /* 11 */
+	GPIO_PIN_V0_1(&chip_cht_SE,  1), /* 12 */
+	GPIO_PIN_V0_1(&chip_cht_SE,  5), /* 13 */
+	GPIO_PIN_V0_1(&chip_cht_SW, 13), /* 14 */
+	GPIO_PIN_V0_1(&chip_cht_SW,  9), /* 15 */
+	GPIO_PIN_V0_1(&chip_cht_N,   6), /* 16 */
+	GPIO_PIN_V0_1(&chip_cht_SE,  6), /* 17 */
+	GPIO_PIN_V0_1(&chip_cht_SW, 17), /* 18 */
+	GPIO_PIN_V0_1(&chip_cht_SW, 21), /* 19 */
+	GPIO_PIN_V0_1(&chip_cht_SW, 19), /* 20 */
+	GPIO_PIN_V0_1(&chip_cht_SW, 16), /* 21 */
+	GPIO_PIN_V0_1(&chip_cht_N,   3), /* 22 */
+	GPIO_PIN_V0_1(&chip_cht_N,   2), /* 23 */
+	GPIO_PIN_V0_1(&chip_cht_N,   1), /* 24 */
+	GPIO_PIN_V0_1(&chip_cht_SW, 14), /* 25 */
+	GPIO_PIN_V0_1(&chip_cht_N,   7), /* 26 */
+	GPIO_PIN_V0_1(&chip_cht_SW, 10), /* 27 */
+};
+
+static struct up_board_info up_board_info_v0_1 = {
+	.pins = up_pins_v0_1,
+	.pincfg_mode = UP_PINCFG_MODE_NONE,
 };
 
 /* UP Board v0.2 uses GPIO-controlled buffers and mux switches
  * to provide better current source/sink capability on the I/O pins
  */
 static struct up_pin_info up_pins_v0_2[N_GPIO] = {
-	GPIO_PIN(&chip_cht_SW, 33, 57, DIR_OUT,  53, MUX_FUNC), /*  0 */
-	GPIO_PIN(&chip_cht_SW, 37, 59, DIR_OUT,  53, MUX_FUNC), /*  1 */
-	GPIO_PIN(&chip_cht_SW, 32, 56, DIR_OUT,  54, MUX_FUNC), /*  2 */
-	GPIO_PIN(&chip_cht_SW, 35, 58, DIR_OUT,  54, MUX_FUNC), /*  3 */
-	GPIO_PIN(&chip_cht_E,  18, 32, DIR_NONE, -1, -1),       /*  4 */
-	GPIO_PIN(&chip_cht_E,  21, 36, DIR_NONE, -1, -1),       /*  5 */
-	GPIO_PIN(&chip_cht_E,  12, 37, DIR_NONE, -1, -1),       /*  6 */
-	GPIO_PIN(&chip_cht_SE, 48, 47, DIR_NONE, -1, -1),       /*  7 */
-	GPIO_PIN(&chip_cht_SE,  7, 46, DIR_OUT,  -1, -1),       /*  8 */
-	GPIO_PIN(&chip_cht_SE,  3, 45, DIR_IN,   -1, -1),       /*  9 */
-	GPIO_PIN(&chip_cht_SE,  6, 44, DIR_OUT,  -1, -1),       /* 10 */
-	GPIO_PIN(&chip_cht_SE,  4, 43, DIR_OUT,  -1, -1),       /* 11 */
-	GPIO_PIN(&chip_cht_SE,  5, 48, DIR_OUT,  -1, -1),       /* 12 */
-	GPIO_PIN(&chip_cht_SE,  1, 49, DIR_OUT,  -1, -1),       /* 13 */
-	GPIO_PIN(&chip_cht_SW, 13, 50, DIR_OUT,  -1, -1),       /* 14 */
-	GPIO_PIN(&chip_cht_SW,  9, 51, DIR_IN,   -1, -1),       /* 15 */
-	GPIO_PIN(&chip_cht_N,   6, 42, DIR_NONE, -1, -1),       /* 16 */
-	GPIO_PIN(&chip_cht_E,  15, 33, DIR_NONE, -1, -1),       /* 17 */
-	GPIO_PIN(&chip_cht_SW, 17, 63, DIR_OUT,  55, MUX_GPIO), /* 18 */
-	GPIO_PIN(&chip_cht_SW, 21, 62, DIR_OUT,  55, MUX_GPIO), /* 19 */
-	GPIO_PIN(&chip_cht_SW, 19, 61, DIR_IN,   55, MUX_GPIO), /* 20 */
-	GPIO_PIN(&chip_cht_SW, 16, 60, DIR_OUT,  55, MUX_GPIO), /* 21 */
-	GPIO_PIN(&chip_cht_N,   3, 35, DIR_NONE, -1, -1),       /* 22 */
-	GPIO_PIN(&chip_cht_N,   2, 39, DIR_NONE, -1, -1),       /* 23 */
-	GPIO_PIN(&chip_cht_N,   1, 40, DIR_NONE, -1, -1),       /* 24 */
-	GPIO_PIN(&chip_cht_SW, 14, 41, DIR_OUT,  -1, -1),       /* 25 */
-	GPIO_PIN(&chip_cht_N,   7, 38, DIR_NONE, -1, -1),       /* 26 */
-	GPIO_PIN(&chip_cht_SW, 10, 34, DIR_IN,   -1, -1),       /* 27 */
+	GPIO_PIN_V0_2(&chip_cht_SW, 33, 57, FDIR_OUT, 53, 0, 1),	/*  0 */
+	GPIO_PIN_V0_2(&chip_cht_SW, 37, 59, FDIR_OUT, 53, 0, 1),	/*  1 */
+	GPIO_PIN_V0_2(&chip_cht_SW, 32, 56, FDIR_OUT, 54, 0, 1),	/*  2 */
+	GPIO_PIN_V0_2(&chip_cht_SW, 35, 58, FDIR_OUT, 54, 0, 1),	/*  3 */
+	GPIO_PIN_V0_2_NO_MUX(&chip_cht_E,  18, 32, FDIR_NONE),		/*  4 */
+	GPIO_PIN_V0_2_NO_MUX(&chip_cht_E,  21, 36, FDIR_NONE),		/*  5 */
+	GPIO_PIN_V0_2_NO_MUX(&chip_cht_E,  12, 37, FDIR_NONE),		/*  6 */
+	GPIO_PIN_V0_2_NO_MUX(&chip_cht_SE, 48, 47, FDIR_NONE),		/*  7 */
+	GPIO_PIN_V0_2_NO_MUX(&chip_cht_SE,  7, 46, FDIR_OUT),		/*  8 */
+	GPIO_PIN_V0_2_NO_MUX(&chip_cht_SE,  3, 45, FDIR_IN),		/*  9 */
+	GPIO_PIN_V0_2_NO_MUX(&chip_cht_SE,  6, 44, FDIR_OUT),		/* 10 */
+	GPIO_PIN_V0_2_NO_MUX(&chip_cht_SE,  4, 43, FDIR_OUT),		/* 11 */
+	GPIO_PIN_V0_2_NO_MUX(&chip_cht_SE,  5, 48, FDIR_OUT),		/* 12 */
+	GPIO_PIN_V0_2_NO_MUX(&chip_cht_SE,  1, 49, FDIR_OUT),		/* 13 */
+	GPIO_PIN_V0_2_NO_MUX(&chip_cht_SW, 13, 50, FDIR_OUT),		/* 14 */
+	GPIO_PIN_V0_2_NO_MUX(&chip_cht_SW,  9, 51, FDIR_IN),		/* 15 */
+	GPIO_PIN_V0_2_NO_MUX(&chip_cht_N,   6, 42, FDIR_NONE),		/* 16 */
+	GPIO_PIN_V0_2_NO_MUX(&chip_cht_E,  15, 33, FDIR_NONE),		/* 17 */
+	GPIO_PIN_V0_2(&chip_cht_SW, 17, 63, FDIR_OUT, 55, 0, 0),	/* 18 */
+	GPIO_PIN_V0_2(&chip_cht_SW, 21, 62, FDIR_OUT, 55, 0, 0),	/* 19 */
+	GPIO_PIN_V0_2(&chip_cht_SW, 19, 61, FDIR_IN,  55, 0, 0),	/* 20 */
+	GPIO_PIN_V0_2(&chip_cht_SW, 16, 60, FDIR_OUT, 55, 0, 0),	/* 21 */
+	GPIO_PIN_V0_2_NO_MUX(&chip_cht_N,   3, 35, FDIR_NONE),		/* 22 */
+	GPIO_PIN_V0_2_NO_MUX(&chip_cht_N,   2, 39, FDIR_NONE),		/* 23 */
+	GPIO_PIN_V0_2_NO_MUX(&chip_cht_N,   1, 40, FDIR_NONE),		/* 24 */
+	GPIO_PIN_V0_2_NO_MUX(&chip_cht_SW, 14, 41, FDIR_OUT),		/* 25 */
+	GPIO_PIN_V0_2_NO_MUX(&chip_cht_N,   7, 38, FDIR_NONE),		/* 26 */
+	GPIO_PIN_V0_2_NO_MUX(&chip_cht_SW, 10, 34, FDIR_IN),		/* 27 */
+};
+
+static struct up_board_info up_board_info_v0_2 = {
+	.pins = up_pins_v0_2,
+	.pincfg_mode = UP_PINCFG_MODE_GPIO,
+};
+
+/* UP Board v0.3 uses a CPLD to provide I/O signal buffers and mux switching */
+static struct up_pin_info up_pins_v0_3[N_GPIO] = {
+	GPIO_PIN_V0_3(&chip_cht_SW, 33,  9, FDIR_OUT, 28, 0, 1),	/*  0 */
+	GPIO_PIN_V0_3(&chip_cht_SW, 37, 23, FDIR_OUT, 28, 0, 1),	/*  1 */
+	GPIO_PIN_V0_3(&chip_cht_SW, 32,  0, FDIR_OUT, 29, 0, 1),	/*  2 */
+	GPIO_PIN_V0_3(&chip_cht_SW, 35,  1, FDIR_OUT, 29, 0, 1),	/*  3 */
+	GPIO_PIN_V0_3(&chip_cht_E,  18,  2, FDIR_IN,  30, 0, 1),	/*  4 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_E,  21, 10, FDIR_NONE),		/*  5 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_E,  12, 11, FDIR_NONE),		/*  6 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE, 48, 22, FDIR_NONE),		/*  7 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE,  7, 21, FDIR_OUT),		/*  8 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE,  3,  7, FDIR_IN),		/*  9 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE,  6,  6, FDIR_OUT),		/* 10 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE,  4,  8, FDIR_OUT),		/* 11 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE,  5, 24, FDIR_OUT),		/* 12 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE,  1, 12, FDIR_OUT),		/* 13 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SW, 13, 15, FDIR_OUT),		/* 14 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SW,  9, 16, FDIR_IN),		/* 15 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_N,   6, 25, FDIR_NONE),		/* 16 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE, 15,  3, FDIR_OUT),		/* 17 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SW, 17, 17, FDIR_OUT),		/* 18 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SW, 21, 13, FDIR_OUT),		/* 19 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SW, 19, 26, FDIR_IN),		/* 20 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SW, 16, 27, FDIR_OUT),		/* 21 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE, 18,  5, FDIR_OUT),		/* 22 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE, 11, 18, FDIR_OUT),		/* 23 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE, 14, 19, FDIR_OUT),		/* 24 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE,  8, 20, FDIR_OUT),		/* 25 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_N,   7, 14, FDIR_NONE),		/* 26 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE, 12,  4, FDIR_OUT),		/* 27 */
+};
+
+static struct up_cpld_info up_cpld_v0_3 = {
+	.strobe_gpio	= { .ci = &chip_cht_N, .offset = 21 },
+	.reset_gpio	= { .ci = &chip_cht_N, .offset = 17 },
+	.data_gpio	= { .ci = &chip_cht_N, .offset = 12 },
+	.oe_gpio	= { .ci = &chip_cht_SW, .offset = 43 },
+	.dir_reg	= CPLD_DIR_REG_INIT,
+	.do_verify	= false,
+};
+
+static struct up_board_info up_board_info_v0_3 = {
+	.pins = up_pins_v0_3,
+	.cpld = &up_cpld_v0_3,
+	.pincfg_mode = UP_PINCFG_MODE_CPLD,
 };
 
 /* The layout and numbering is designed to emulate the Raspberry Pi 2 */
@@ -231,16 +333,16 @@ static const struct pinctrl_pin_desc up_pins[] = {
 	PINCTRL_PIN(15, "UART1_RX"),
 	PINCTRL_PIN(16, "GPIO16"),
 	PINCTRL_PIN(17, "GPIO17"),
-	PINCTRL_PIN(18, "I2S0_CLK"),
-	PINCTRL_PIN(19, "I2S0_FRM"),
-	PINCTRL_PIN(20, "I2S0_DIN"),
-	PINCTRL_PIN(21, "I2S0_DOUT"),
+	PINCTRL_PIN(18, "I2S_CLK"),
+	PINCTRL_PIN(19, "I2S_FRM"),
+	PINCTRL_PIN(20, "I2S_DIN"),
+	PINCTRL_PIN(21, "I2S_DOUT"),
 	PINCTRL_PIN(22, "GPIO22"),
 	PINCTRL_PIN(23, "GPIO23"),
 	PINCTRL_PIN(24, "GPIO24"),
-	PINCTRL_PIN(25, "UART2_TX"),
+	PINCTRL_PIN(25, "GPIO25"),
 	PINCTRL_PIN(26, "GPIO26"),
-	PINCTRL_PIN(27, "UART2_RX"),
+	PINCTRL_PIN(27, "GPIO27"),
 };
 
 static const unsigned uart1_pins[] = { 14, 15 };
@@ -251,6 +353,7 @@ static const unsigned spi2_pins[]  = { 8, 9, 10, 11 };
 static const unsigned i2s0_pins[]  = { 18, 19, 20, 21 };
 static const unsigned pwm0_pins[]  = { 12 };
 static const unsigned pwm1_pins[]  = { 13 };
+static const unsigned adc0_pins[]  = { 4 };
 
 static const struct up_pingroup pin_groups[] = {
 	PIN_GROUP("uart1_grp", uart1_pins),
@@ -261,6 +364,7 @@ static const struct up_pingroup pin_groups[] = {
 	PIN_GROUP("i2s0_grp", i2s0_pins),
 	PIN_GROUP("pwm0_grp", pwm0_pins),
 	PIN_GROUP("pwm1_grp", pwm1_pins),
+	PIN_GROUP("adc0_grp", adc0_pins),
 };
 
 static const char * const uart1_groups[] = { "uart1_grp" };
@@ -271,6 +375,7 @@ static const char * const spi2_groups[]  = { "spi2_grp" };
 static const char * const i2s0_groups[]  = { "i2s0_grp" };
 static const char * const pwm0_groups[]  = { "pwm0_grp" };
 static const char * const pwm1_groups[]  = { "pwm1_grp" };
+static const char * const adc0_groups[]  = { "adc0_grp" };
 
 static const struct up_function pin_functions[] = {
 	FUNCTION("uart1", uart1_groups),
@@ -281,7 +386,106 @@ static const struct up_function pin_functions[] = {
 	FUNCTION("i2s0",  i2s0_groups),
 	FUNCTION("pwm0",  pwm0_groups),
 	FUNCTION("pwm1",  pwm1_groups),
+	FUNCTION("adc0",  adc0_groups),
 };
+
+/* On later UP board versions (v0.3 onwards), the header pin level shifting and
+ * mux switching is controlled by a dedicated CPLD with proprietary firmware
+ *
+ * The CPLD is responsible for connecting and translating 1.8V GPIO signals from
+ * the SoC to the 28 GPIO header pins at 3.3V, and for this it needs to be
+ * configured with direction (input/output) for each GPIO.  In addition, it
+ * manages 3 mux switches (2 for I2C bus pins, 1 for ADC pin) which need to be
+ * configured on/off.
+ *
+ * A 31-bit register value is loaded into the CPLD at run-time to configure the
+ * 28 GPIO level shifters and 3 mux switches.  This register value is loaded
+ * a 2-wire data interface consisting of a strobe and data line.  The data line
+ * is sampled on each rising edge that appears on the strobe line.  A reset
+ * signal (active low) is used to reset internal counters and state prior to
+ * loading a new register value.  An output-enable signal is provided, initially
+ * disabled which puts all header pins in a HiZ state until a valid pin
+ * configuration is loaded by this driver.
+ *
+ * The 31-bit register value is clocked into the CPLD bit-by-bit, and then read
+ * back.  However, in the current implementation, the read-back value must be
+ * ignored because it is not set correctly.
+ * A total of 64 rising edges on the strobe signal are required, following the
+ * reset pulse, before the new register value is "latched" by the CPLD.
+ */
+static int cpld_configure(struct up_cpld_info *cpld)
+{
+	u32 dir_reg_verify = 0;
+	int i;
+
+	/* Reset the CPLD internal counters */
+	gpiod_set_value(cpld->reset_gpio.desc, 0);
+	gpiod_set_value(cpld->reset_gpio.desc, 1);
+
+	/* Update the CPLD dir register */
+	gpiod_direction_output(cpld->data_gpio.desc, 0);
+	for (i = CPLD_REG_SIZE - 1; i >= 0; i--) {
+		/* Bring STB low initially */
+		gpiod_set_value(cpld->strobe_gpio.desc, 0);
+		/* Load the next bit value, MSb first */
+		gpiod_set_value(cpld->data_gpio.desc,
+				(cpld->dir_reg >> i) & 0x1);
+		/* Bring STB high to latch the bit value */
+		gpiod_set_value(cpld->strobe_gpio.desc, 1);
+	}
+
+	/* Issue a dummy STB cycle, change data gpio dir for read-back */
+	gpiod_set_value(cpld->strobe_gpio.desc, 0);
+	gpiod_direction_input(cpld->data_gpio.desc);
+	gpiod_set_value(cpld->strobe_gpio.desc, 1);
+
+	/* Read back the value */
+	for (i = CPLD_REG_SIZE - 1; i >= 0; i--) {
+		/* Cycle the strobe and read the data pin */
+		gpiod_set_value(cpld->strobe_gpio.desc, 0);
+		gpiod_set_value(cpld->strobe_gpio.desc, 1);
+		dir_reg_verify |= gpiod_get_value(cpld->data_gpio.desc) << i;
+	}
+
+	/* Verify that the CPLD dir register was written successfully */
+	if (cpld->do_verify && (dir_reg_verify != cpld->dir_reg)) {
+		pr_err("CPLD update verification failed\n");
+		return -EIO;
+	}
+
+	/* Ensure the CPLD outputs are enabled at this point */
+	/* Issue a dummy STB cycle to latch the dir register updates */
+	gpiod_set_value(cpld->strobe_gpio.desc, 0);
+	gpiod_set_value(cpld->strobe_gpio.desc, 1);
+
+	return 0;
+}
+
+static int cpld_set_value(struct up_cpld_info *cpld, unsigned int offset,
+			  int value)
+{
+	u32 old_regval = cpld->dir_reg;
+
+	if (value)
+		cpld->dir_reg |= 1 << offset;
+	else
+		cpld->dir_reg &= ~(1 << offset);
+
+	if (cpld->dir_reg != old_regval)
+		return cpld_configure(cpld);
+
+	/* No change in CPLD register */
+	return 0;
+}
+
+static int up_pincfg_set(struct up_board_info *board, int offset, int value)
+{
+	if (board->cpld)
+		return cpld_set_value(board->cpld, offset, value);
+
+	gpio_set_value_cansleep(offset, value);
+	return 0;
+}
 
 static inline struct up_pctrl *gc_to_up_pctrl(struct gpio_chip *gc)
 {
@@ -293,40 +497,89 @@ static int up_gpiochip_match(struct gpio_chip *chip, void *data)
 	return !strcmp(chip->label, data);
 }
 
-static int up_gpio_map_pins(struct platform_device *pdev,
-			    struct up_pin_info *pin_info)
+static int up_soc_gpio_resolve(struct platform_device *pdev,
+			       struct up_soc_gpio_info *gpio_info)
+{
+	struct up_soc_gpiochip_info *ci = gpio_info->ci;
+
+	if (!ci->chip) {
+		ci->chip = gpiochip_find(ci->name, up_gpiochip_match);
+		if (!ci->chip)
+			return -EPROBE_DEFER;
+	}
+	gpio_info->gpio = ci->chip->base + gpio_info->offset;
+	gpio_info->desc = gpio_to_desc(gpio_info->gpio);
+	if (!gpio_info->desc) {
+		dev_err(&pdev->dev, "Failed to get descriptor for gpio %d\n",
+			gpio_info->gpio);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int up_gpio_pincfg_cpld(struct platform_device *pdev,
+			       struct up_board_info *board)
+{
+	struct up_cpld_info *cpld = board->cpld;
+	struct up_soc_gpio_info *cpld_gpios[] = {
+		&cpld->strobe_gpio,
+		&cpld->reset_gpio,
+		&cpld->data_gpio,
+		&cpld->oe_gpio,
+	};
+	int i, ret;
+
+	/* Initialise the CPLD config GPIOs as outputs, initially low */
+	for (i = 0; i < ARRAY_SIZE(cpld_gpios); i++) {
+		struct up_soc_gpio_info *gpio_info = cpld_gpios[i];
+
+		ret = up_soc_gpio_resolve(pdev, gpio_info);
+		if (ret)
+			return ret;
+
+		ret = devm_gpio_request_one(&pdev->dev, gpio_info->gpio,
+					    GPIOF_OUT_INIT_LOW,
+					    dev_name(&pdev->dev));
+		if (ret)
+			return ret;
+	}
+
+	/* Load initial CPLD configuration (all pins set for GPIO input) */
+	ret = cpld_configure(board->cpld);
+	if (ret) {
+		dev_err(&pdev->dev, "CPLD initialisation failed\n");
+		return ret;
+	}
+
+	/* Enable the CPLD outputs after a valid configuration has been set */
+	gpiod_set_value(cpld->oe_gpio.desc, 1);
+
+	return 0;
+}
+
+static int up_gpio_pincfg_gpio(struct platform_device *pdev,
+			       struct up_board_info *board)
 {
 	unsigned i;
 	int ret;
 
-	/* Find the Cherry Trail GPIO descriptors corresponding
-	 * with each GPIO pin on the UP Board I/O header
-	 */
 	for (i = 0; i < N_GPIO; i++) {
-		struct up_pin_info *pin = &pin_info[i];
-		struct up_soc_gpiochip_info *ci = pin->soc_gpio.ci;
-
-		if (!ci->chip) {
-			ci->chip = gpiochip_find(ci->name, up_gpiochip_match);
-			if (!ci->chip)
-				return -EPROBE_DEFER;
-		}
-		pin->soc_gpio.desc = gpio_to_desc(ci->chip->base
-						  + pin->soc_gpio.offset);
-		if (!pin->soc_gpio.desc)
-			return -EINVAL;
+		struct up_pin_info *pin = &board->pins[i];
 
 		/* Reserve GPIOs for pin direction and mux control, if any */
-		if (gpio_is_valid(pin->dir_gpio)) {
-			ret = devm_gpio_request_one(&pdev->dev, pin->dir_gpio,
-						    GPIOF_OUT_INIT_HIGH,
+		if (pin->dir_ctrl_pin != NONE) {
+			ret = devm_gpio_request_one(&pdev->dev,
+						    pin->dir_ctrl_pin,
+						    GPIOF_OUT_INIT_LOW,
 						    dev_name(&pdev->dev));
 			if (ret)
 				return ret;
 		}
-		if (gpio_is_valid(pin->mux_gpio)) {
-			ret = devm_gpio_request_one(&pdev->dev, pin->mux_gpio,
-						    GPIOF_OUT_INIT_HIGH,
+		if (pin->mux_ctrl_pin != NONE) {
+			ret = devm_gpio_request_one(&pdev->dev,
+						    pin->mux_ctrl_pin,
+						    GPIOF_OUT_INIT_LOW,
 						    dev_name(&pdev->dev));
 			/* mux may be shared by multiple pins - ignore EBUSY */
 			if (ret && ret != -EBUSY)
@@ -335,6 +588,38 @@ static int up_gpio_map_pins(struct platform_device *pdev,
 	}
 
 	return 0;
+}
+
+static int up_gpio_pincfg_init(struct platform_device *pdev,
+			       struct up_board_info *board)
+{
+	unsigned i;
+	int ret;
+
+	/* Find the Cherry Trail GPIO descriptors corresponding
+	 * with each GPIO pin on the UP Board I/O header
+	 */
+	for (i = 0; i < N_GPIO; i++) {
+		struct up_pin_info *pin = &board->pins[i];
+
+		ret = up_soc_gpio_resolve(pdev, &pin->soc_gpio);
+		if (ret)
+			return ret;
+
+		/* Ensure the GPIO pins are configured as inputs initially */
+		ret = gpiod_direction_input(pin->soc_gpio.desc);
+		if (ret) {
+			dev_err(&pdev->dev, "GPIO direction init failed\n");
+			return ret;
+		}
+	}
+
+	if (board->pincfg_mode == UP_PINCFG_MODE_CPLD)
+		return up_gpio_pincfg_cpld(pdev, board);
+	else if (board->pincfg_mode == UP_PINCFG_MODE_GPIO)
+		return up_gpio_pincfg_gpio(pdev, board);
+	else
+		return 0;
 }
 
 static irqreturn_t up_gpio_irq_handler(int irq, void *data)
@@ -350,7 +635,7 @@ static unsigned int up_gpio_irq_startup(struct irq_data *data)
 	struct gpio_chip *gc = irq_data_get_irq_chip_data(data);
 	struct up_pctrl *up_pctrl = gc_to_up_pctrl(gc);
 	unsigned offset = irqd_to_hwirq(data);
-	struct up_pin_info *pin = &up_pctrl->pin_info[offset];
+	struct up_pin_info *pin = &up_pctrl->board->pins[offset];
 
 	return request_irq(pin->soc_gpio.irq, up_gpio_irq_handler,
 			   IRQF_ONESHOT, dev_name(gc->dev), pin);
@@ -361,7 +646,7 @@ static void up_gpio_irq_shutdown(struct irq_data *data)
 	struct gpio_chip *gc = irq_data_get_irq_chip_data(data);
 	struct up_pctrl *up_pctrl = gc_to_up_pctrl(gc);
 	unsigned offset = irqd_to_hwirq(data);
-	struct up_pin_info *pin = &up_pctrl->pin_info[offset];
+	struct up_pin_info *pin = &up_pctrl->board->pins[offset];
 
 	free_irq(pin->soc_gpio.irq, pin);
 }
@@ -381,7 +666,8 @@ static struct irq_chip up_gpio_irqchip = {
 static int up_gpio_dir_in(struct gpio_chip *gc, unsigned offset)
 {
 	struct up_pctrl *up_pctrl = gc_to_up_pctrl(gc);
-	struct gpio_desc *desc = up_pctrl->pin_info[offset].soc_gpio.desc;
+	struct up_pin_info *pin = &up_pctrl->board->pins[offset];
+	struct gpio_desc *desc = pin->soc_gpio.desc;
 	int ret;
 
 	ret = gpiod_direction_input(desc);
@@ -394,7 +680,8 @@ static int up_gpio_dir_in(struct gpio_chip *gc, unsigned offset)
 static int up_gpio_dir_out(struct gpio_chip *gc, unsigned offset, int value)
 {
 	struct up_pctrl *up_pctrl = gc_to_up_pctrl(gc);
-	struct gpio_desc *desc = up_pctrl->pin_info[offset].soc_gpio.desc;
+	struct up_pin_info *pin = &up_pctrl->board->pins[offset];
+	struct gpio_desc *desc = pin->soc_gpio.desc;
 	int ret;
 
 	ret = pinctrl_gpio_direction_output(gc->base + offset);
@@ -407,7 +694,8 @@ static int up_gpio_dir_out(struct gpio_chip *gc, unsigned offset, int value)
 static int up_gpio_get_dir(struct gpio_chip *gc, unsigned offset)
 {
 	struct up_pctrl *up_pctrl = gc_to_up_pctrl(gc);
-	struct gpio_desc *desc = up_pctrl->pin_info[offset].soc_gpio.desc;
+	struct up_pin_info *pin = &up_pctrl->board->pins[offset];
+	struct gpio_desc *desc = pin->soc_gpio.desc;
 
 	return gpiod_get_direction(desc);
 }
@@ -415,7 +703,8 @@ static int up_gpio_get_dir(struct gpio_chip *gc, unsigned offset)
 static int up_gpio_request(struct gpio_chip *gc, unsigned offset)
 {
 	struct up_pctrl *up_pctrl = gc_to_up_pctrl(gc);
-	struct gpio_desc *desc = up_pctrl->pin_info[offset].soc_gpio.desc;
+	struct up_pin_info *pin = &up_pctrl->board->pins[offset];
+	struct gpio_desc *desc = pin->soc_gpio.desc;
 
 	pinctrl_request_gpio(gc->base + offset);
 	return gpio_request(desc_to_gpio(desc), gc->label);
@@ -424,7 +713,8 @@ static int up_gpio_request(struct gpio_chip *gc, unsigned offset)
 static void up_gpio_free(struct gpio_chip *gc, unsigned offset)
 {
 	struct up_pctrl *up_pctrl = gc_to_up_pctrl(gc);
-	struct gpio_desc *desc = up_pctrl->pin_info[offset].soc_gpio.desc;
+	struct up_pin_info *pin = &up_pctrl->board->pins[offset];
+	struct gpio_desc *desc = pin->soc_gpio.desc;
 
 	pinctrl_free_gpio(gc->base + offset);
 	gpio_free(desc_to_gpio(desc));
@@ -433,7 +723,8 @@ static void up_gpio_free(struct gpio_chip *gc, unsigned offset)
 static int up_gpio_get(struct gpio_chip *gc, unsigned offset)
 {
 	struct up_pctrl *up_pctrl = gc_to_up_pctrl(gc);
-	struct gpio_desc *desc = up_pctrl->pin_info[offset].soc_gpio.desc;
+	struct up_pin_info *pin = &up_pctrl->board->pins[offset];
+	struct gpio_desc *desc = pin->soc_gpio.desc;
 
 	return gpiod_get_value(desc);
 }
@@ -441,7 +732,8 @@ static int up_gpio_get(struct gpio_chip *gc, unsigned offset)
 static void up_gpio_set(struct gpio_chip *gc, unsigned offset, int value)
 {
 	struct up_pctrl *up_pctrl = gc_to_up_pctrl(gc);
-	struct gpio_desc *desc = up_pctrl->pin_info[offset].soc_gpio.desc;
+	struct up_pin_info *pin = &up_pctrl->board->pins[offset];
+	struct gpio_desc *desc = pin->soc_gpio.desc;
 
 	gpiod_set_value(desc, value);
 }
@@ -464,13 +756,13 @@ static int up_get_groups_count(struct pinctrl_dev *pctldev)
 }
 
 static const char *up_get_group_name(struct pinctrl_dev *pctldev,
-				      unsigned group)
+				     unsigned group)
 {
 	return pin_groups[group].name;
 }
 
 static int up_get_group_pins(struct pinctrl_dev *pctldev, unsigned group,
-			      const unsigned **pins, unsigned *npins)
+			     const unsigned **pins, unsigned *npins)
 {
 	*pins = pin_groups[group].pins;
 	*npins = pin_groups[group].npins;
@@ -511,15 +803,21 @@ static int up_pinmux_set_mux(struct pinctrl_dev *pctldev, unsigned function,
 	const struct up_pingroup *grp = &pin_groups[group];
 	int i;
 
+	if (up_pctrl->board->pincfg_mode == UP_PINCFG_MODE_NONE)
+		return 0;
+
 	for (i = 0; i < grp->npins; i++) {
 		int offset = grp->pins[i];
-		struct up_pin_info *pin = &up_pctrl->pin_info[offset];
+		struct up_pin_info *pin = &up_pctrl->board->pins[offset];
 
-		if (gpio_is_valid(pin->dir_gpio) && (pin->func_dir != DIR_NONE))
-			gpio_set_value_cansleep(pin->dir_gpio, pin->func_dir);
-		if (gpio_is_valid(pin->mux_gpio))
-			gpio_set_value_cansleep(pin->mux_gpio, pin->func_mux);
-		pin->func_sel = true;
+		if ((pin->dir_ctrl_pin != NONE) && (pin->func_dir != FDIR_NONE))
+			up_pincfg_set(up_pctrl->board, pin->dir_ctrl_pin,
+				      pin->func_dir == FDIR_IN ?
+				      pin->dir_in : pin->dir_out);
+		if (pin->mux_ctrl_pin != NONE)
+			up_pincfg_set(up_pctrl->board, pin->mux_ctrl_pin,
+				      pin->mux_func);
+		pin->func_enabled = true;
 	}
 
 	return 0;
@@ -530,11 +828,14 @@ static int up_gpio_set_direction(struct pinctrl_dev *pctldev,
 				 unsigned offset, bool input)
 {
 	struct up_pctrl *up_pctrl = pinctrl_dev_get_drvdata(pctldev);
-	struct up_pin_info *pin = &up_pctrl->pin_info[offset];
+	struct up_pin_info *pin = &up_pctrl->board->pins[offset];
 
-	if (gpio_is_valid(pin->dir_gpio))
-		gpio_set_value_cansleep(pin->dir_gpio,
-					input ? DIR_IN : DIR_OUT);
+	if (up_pctrl->board->pincfg_mode == UP_PINCFG_MODE_NONE)
+		return 0;
+
+	if (pin->dir_ctrl_pin != NONE)
+		up_pincfg_set(up_pctrl->board, pin->dir_ctrl_pin,
+			      input ? pin->dir_in : pin->dir_out);
 
 	return 0;
 }
@@ -544,14 +845,18 @@ static int up_gpio_request_enable(struct pinctrl_dev *pctldev,
 				  unsigned offset)
 {
 	struct up_pctrl *up_pctrl = pinctrl_dev_get_drvdata(pctldev);
-	struct up_pin_info *pin = &up_pctrl->pin_info[offset];
+	struct up_pin_info *pin = &up_pctrl->board->pins[offset];
 
-	if (gpio_is_valid(pin->mux_gpio))
-		gpio_set_value_cansleep(pin->mux_gpio, MUX_GPIO);
-	if (gpio_is_valid(pin->dir_gpio))
-		gpio_set_value_cansleep(pin->dir_gpio,
-					gpiod_get_direction(pin->soc_gpio.desc)
-					? DIR_IN : DIR_OUT);
+	if (up_pctrl->board->pincfg_mode == UP_PINCFG_MODE_NONE)
+		return 0;
+
+	if (pin->mux_ctrl_pin != NONE)
+		up_pincfg_set(up_pctrl->board, pin->mux_ctrl_pin,
+			      pin->mux_gpio);
+	if (pin->dir_ctrl_pin != NONE)
+		up_pincfg_set(up_pctrl->board, pin->dir_ctrl_pin,
+			      gpiod_get_direction(pin->soc_gpio.desc)
+			      ? pin->dir_in : pin->dir_out);
 
 	return 0;
 }
@@ -561,12 +866,20 @@ static void up_gpio_disable_free(struct pinctrl_dev *pctldev,
 				 unsigned offset)
 {
 	struct up_pctrl *up_pctrl = pinctrl_dev_get_drvdata(pctldev);
-	struct up_pin_info *pin = &up_pctrl->pin_info[offset];
+	struct up_pin_info *pin = &up_pctrl->board->pins[offset];
 
-	if (gpio_is_valid(pin->dir_gpio) && pin->func_sel)
-		gpio_set_value_cansleep(pin->dir_gpio, pin->func_dir);
-	if (gpio_is_valid(pin->mux_gpio))
-		gpio_set_value_cansleep(pin->mux_gpio, pin->func_mux);
+	if (up_pctrl->board->pincfg_mode == UP_PINCFG_MODE_NONE)
+		return;
+
+	if (pin->func_enabled) {
+		if ((pin->dir_ctrl_pin != NONE) && (pin->func_dir != FDIR_NONE))
+			up_pincfg_set(up_pctrl->board, pin->dir_ctrl_pin,
+				      pin->func_dir == FDIR_IN ?
+				      pin->dir_in : pin->dir_out);
+		if (pin->mux_ctrl_pin != NONE)
+			up_pincfg_set(up_pctrl->board, pin->mux_ctrl_pin,
+				      pin->mux_func);
+	}
 }
 
 static const struct pinmux_ops up_pinmux_ops = {
@@ -580,13 +893,13 @@ static const struct pinmux_ops up_pinmux_ops = {
 };
 
 static int up_config_get(struct pinctrl_dev *pctldev, unsigned pin,
-			  unsigned long *config)
+			 unsigned long *config)
 {
 	return -ENOTSUPP;
 }
 
 static int up_config_set(struct pinctrl_dev *pctldev, unsigned pin,
-			  unsigned long *configs, unsigned nconfigs)
+			 unsigned long *configs, unsigned nconfigs)
 {
 	return 0;
 }
@@ -608,15 +921,12 @@ static struct pinctrl_desc up_pinctrl_desc = {
 
 static const struct dmi_system_id up_board_id_table[] = {
 	{
-		/* TODO - remove when new BIOS is available with
-		 * correct board version numbering
-		 */
 		.matches = {
 			DMI_MATCH(DMI_SYS_VENDOR, "AAEON"),
 			DMI_MATCH(DMI_BOARD_NAME, "UP-CHT01"),
 			DMI_MATCH(DMI_BOARD_VERSION, "V1.0"),
 		},
-		.driver_data = (void *)&up_pins_v0_2
+		.driver_data = (void *)&up_board_info_v0_3
 	},
 	{
 		.matches = {
@@ -624,7 +934,7 @@ static const struct dmi_system_id up_board_id_table[] = {
 			DMI_MATCH(DMI_BOARD_NAME, "UP-CHT01"),
 			DMI_MATCH(DMI_BOARD_VERSION, "V0.2"),
 		},
-		.driver_data = (void *)&up_pins_v0_2
+		.driver_data = (void *)&up_board_info_v0_2
 	},
 	{
 		.matches = {
@@ -632,7 +942,7 @@ static const struct dmi_system_id up_board_id_table[] = {
 			DMI_MATCH(DMI_BOARD_NAME, "UP-CHT01"),
 			DMI_MATCH(DMI_BOARD_VERSION, "V0.1"),
 		},
-		.driver_data = (void *)&up_pins_v0_1
+		.driver_data = (void *)&up_board_info_v0_1
 	},
 	{}
 };
@@ -640,7 +950,7 @@ static const struct dmi_system_id up_board_id_table[] = {
 static int up_pinctrl_probe(struct platform_device *pdev)
 {
 	struct up_pctrl *up_pctrl;
-	struct up_pin_info *pin_info;
+	struct up_board_info *board;
 	const struct dmi_system_id *system_id;
 	unsigned offset;
 	int ret;
@@ -649,9 +959,9 @@ static int up_pinctrl_probe(struct platform_device *pdev)
 	if (!system_id)
 		return -ENXIO;
 
-	pin_info = system_id->driver_data;
+	board = system_id->driver_data;
 
-	ret = up_gpio_map_pins(pdev, pin_info);
+	ret = up_gpio_pincfg_init(pdev, board);
 	if (ret)
 		return ret;
 
@@ -670,7 +980,7 @@ static int up_pinctrl_probe(struct platform_device *pdev)
 		return PTR_ERR(up_pctrl->pctldev);
 	}
 
-	up_pctrl->pin_info = pin_info;
+	up_pctrl->board = board;
 	up_pctrl->chip = up_gpio_chip;
 	up_pctrl->chip.label = dev_name(&pdev->dev);
 	up_pctrl->chip.dev = &pdev->dev;
@@ -697,7 +1007,7 @@ static int up_pinctrl_probe(struct platform_device *pdev)
 	}
 
 	for (offset = 0; offset < up_pctrl->chip.ngpio; offset++) {
-		struct up_pin_info *pin = &up_pctrl->pin_info[offset];
+		struct up_pin_info *pin = &board->pins[offset];
 		struct irq_data *irq_data;
 
 		pin->irq = irq_find_mapping(up_pctrl->chip.irqdomain, offset);
