@@ -25,8 +25,9 @@
 #include <linux/i2c.h>
 #include <linux/spi/spi.h>
 #include <linux/platform_data/pca953x.h>
+#include <linux/regulator/fixed.h>
+#include <linux/regulator/machine.h>
 
-#define UP_BOARD_GPIO_EXP_I2C_BUS 5
 #define UP_BOARD_GPIO_EXP0_BASE   32
 #define UP_BOARD_GPIO_EXP1_BASE   48
 
@@ -36,8 +37,7 @@
 struct up_board_info {
 	struct pinctrl_map *pinmux_maps;
 	unsigned num_pinmux_maps;
-	struct i2c_board_info *i2c_devices;
-	unsigned num_i2c_devices;
+	int (*init_devices)(void);
 };
 
 static bool spidev0 = true;
@@ -60,13 +60,13 @@ static unsigned long i2c_pullup_conf[] = {
 };
 
 #define UP_PIN_MAP_MUX_GROUP(d, p, f) \
-	PIN_MAP_MUX_GROUP_DEFAULT(d, p, f"_grp", f)
+	PIN_MAP_MUX_GROUP_DEFAULT(d, p, f "_grp", f)
 
 #define UP_PIN_MAP_CONF_ODEN(d, p, f) \
-	PIN_MAP_CONFIGS_GROUP_DEFAULT(d, p, f"_grp", oden_disable_conf)
+	PIN_MAP_CONFIGS_GROUP_DEFAULT(d, p, f "_grp", oden_disable_conf)
 
-#define UP_PIN_MAP_CONF_I2C5(d, p, f) \
-	PIN_MAP_CONFIGS_GROUP_DEFAULT(d, p, f"_grp", i2c_pullup_conf)
+#define UP_PIN_MAP_CONF_I2C_PULLUP(d, p, f)	\
+	PIN_MAP_CONFIGS_GROUP_DEFAULT(d, p, f "_grp", i2c_pullup_conf)
 
 /* Maps pin functions on UP Board I/O pin header to specific CHT SoC devices */
 static struct pinctrl_map up_pinmux_maps_v0_1[] __initdata = {
@@ -118,7 +118,38 @@ static struct pinctrl_map up_pinmux_maps_v0_2[] __initdata = {
 	UP_PIN_MAP_CONF_ODEN("8086228E:01", "INT33FF:03", "spi2"),
 
 	UP_PIN_MAP_MUX_GROUP("808622C1:05", "INT33FF:00", "i2c5"),
-	UP_PIN_MAP_CONF_I2C5("808622C1:05", "INT33FF:00", "i2c5"),
+	UP_PIN_MAP_CONF_I2C_PULLUP("808622C1:05", "INT33FF:00", "i2c5"),
+};
+
+static struct pinctrl_map up_pinmux_maps_v0_3[] __initdata = {
+	UP_PIN_MAP_MUX_GROUP("8086228A:00", "up-pinctrl", "uart1"),
+	UP_PIN_MAP_MUX_GROUP("808622C1:00", "up-pinctrl", "i2c0"),
+	UP_PIN_MAP_MUX_GROUP("808622C1:01", "up-pinctrl", "i2c1"),
+	UP_PIN_MAP_MUX_GROUP("808622A8:00", "up-pinctrl", "i2s0"),
+	UP_PIN_MAP_MUX_GROUP("80862288:00", "up-pinctrl", "pwm0"),
+	UP_PIN_MAP_MUX_GROUP("80862288:01", "up-pinctrl", "pwm1"),
+	UP_PIN_MAP_MUX_GROUP("8086228E:01", "up-pinctrl", "spi2"),
+	UP_PIN_MAP_MUX_GROUP("2-0054",      "up-pinctrl", "adc0"),
+
+	UP_PIN_MAP_MUX_GROUP("8086228A:00", "INT33FF:00", "uart1"),
+	UP_PIN_MAP_MUX_GROUP("808622C1:00", "INT33FF:00", "i2c0"),
+	UP_PIN_MAP_MUX_GROUP("808622C1:01", "INT33FF:00", "i2c1"),
+	UP_PIN_MAP_MUX_GROUP("808622C1:02", "INT33FF:00", "i2c2"),
+	UP_PIN_MAP_MUX_GROUP("808622A8:00", "INT33FF:00", "lpe"),
+	UP_PIN_MAP_MUX_GROUP("80862288:00", "INT33FF:03", "pwm0"),
+	UP_PIN_MAP_MUX_GROUP("80862288:01", "INT33FF:03", "pwm1"),
+	UP_PIN_MAP_MUX_GROUP("8086228E:01", "INT33FF:03", "spi2"),
+
+	UP_PIN_MAP_CONF_ODEN("8086228A:00", "INT33FF:00", "uart1"),
+	UP_PIN_MAP_CONF_ODEN("808622C1:00", "INT33FF:00", "i2c0"),
+	UP_PIN_MAP_CONF_ODEN("808622C1:01", "INT33FF:00", "i2c1"),
+	UP_PIN_MAP_CONF_ODEN("808622A8:00", "INT33FF:00", "lpe"),
+	UP_PIN_MAP_CONF_ODEN("80862288:00", "INT33FF:03", "pwm0"),
+	UP_PIN_MAP_CONF_ODEN("80862288:01", "INT33FF:03", "pwm1"),
+	UP_PIN_MAP_CONF_ODEN("8086228E:01", "INT33FF:03", "spi2"),
+
+	UP_PIN_MAP_CONF_I2C_PULLUP("808622C1:00", "INT33FF:00", "i2c0"),
+	UP_PIN_MAP_CONF_I2C_PULLUP("808622C1:01", "INT33FF:00", "i2c1"),
 };
 
 static struct platform_device *up_pinctrl_dev;
@@ -142,12 +173,60 @@ static struct i2c_board_info up_i2c_devices_v0_2[] __initdata = {
 	},
 };
 
+static struct i2c_board_info up_i2c_devices_v0_3[] __initdata = {
+	{
+		I2C_BOARD_INFO("adc081c", 0x54),
+	},
+};
+
+static struct regulator_consumer_supply vref3v3_consumers[] = {
+	REGULATOR_SUPPLY("vref", "2-0054"),
+};
+
 static struct spi_board_info up_spidev0_info __initdata = {
 	.modalias	= "spidev",
 	.bus_num	= UP_BOARD_SPIDEV_BUS_NUM,
 	.chip_select	= 0,
 	.max_speed_hz   = UP_BOARD_SPIDEV_MAX_CLK,
 };
+
+static int __init
+up_board_init_devices_v0_2(void)
+{
+	int ret = i2c_register_board_info(5, up_i2c_devices_v0_2,
+					  ARRAY_SIZE(up_i2c_devices_v0_2));
+	if (ret) {
+		pr_err("Failed to register UP Board i2c devices");
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
+static int __init
+up_board_init_devices_v0_3(void)
+{
+	struct platform_device *vreg;
+	int ret;
+
+	vreg = regulator_register_always_on(0, "fixed-3.3V",
+					    vref3v3_consumers,
+					    ARRAY_SIZE(vref3v3_consumers),
+					    3300000);
+	if (!vreg) {
+		pr_err("Failed to register UP Board ADC vref regulator");
+		return -ENODEV;
+	}
+
+	ret = i2c_register_board_info(2, up_i2c_devices_v0_3,
+				      ARRAY_SIZE(up_i2c_devices_v0_3));
+	if (ret) {
+		pr_err("Failed to register UP Board i2c devices");
+		return -ENODEV;
+	}
+
+	return 0;
+}
 
 static struct up_board_info up_board_info_v0_1 = {
 	.pinmux_maps = up_pinmux_maps_v0_1,
@@ -157,8 +236,13 @@ static struct up_board_info up_board_info_v0_1 = {
 static struct up_board_info up_board_info_v0_2 = {
 	.pinmux_maps = up_pinmux_maps_v0_2,
 	.num_pinmux_maps = ARRAY_SIZE(up_pinmux_maps_v0_2),
-	.i2c_devices = up_i2c_devices_v0_2,
-	.num_i2c_devices = ARRAY_SIZE(up_i2c_devices_v0_2),
+	.init_devices = up_board_init_devices_v0_2,
+};
+
+static struct up_board_info up_board_info_v0_3 = {
+	.pinmux_maps = up_pinmux_maps_v0_3,
+	.num_pinmux_maps = ARRAY_SIZE(up_pinmux_maps_v0_3),
+	.init_devices = up_board_init_devices_v0_3,
 };
 
 static const struct dmi_system_id up_board_id_table[] = {
@@ -171,7 +255,15 @@ static const struct dmi_system_id up_board_id_table[] = {
 			DMI_MATCH(DMI_BOARD_NAME, "UP-CHT01"),
 			DMI_MATCH(DMI_BOARD_VERSION, "V1.0"),
 		},
-		.driver_data = (void *)&up_board_info_v0_2
+		.driver_data = (void *)&up_board_info_v0_3
+	},
+	{
+		.matches = {
+			DMI_MATCH(DMI_SYS_VENDOR, "AAEON"),
+			DMI_MATCH(DMI_BOARD_NAME, "UP-CHT01"),
+			DMI_MATCH(DMI_BOARD_VERSION, "V0.3"),
+		},
+		.driver_data = (void *)&up_board_info_v0_3
 	},
 	{
 		.matches = {
@@ -193,8 +285,7 @@ static const struct dmi_system_id up_board_id_table[] = {
 };
 
 static int __init
-up_board_init(void)
-{
+up_board_init_devices(void) {
 	const struct dmi_system_id *system_id;
 	struct up_board_info *board_info;
 	int ret;
@@ -205,52 +296,49 @@ up_board_init(void)
 
 	board_info = system_id->driver_data;
 
+	/* Register pin control mappings specific to board version */
 	if (board_info->pinmux_maps) {
 		ret = pinctrl_register_mappings(board_info->pinmux_maps,
 						board_info->num_pinmux_maps);
 		if (ret) {
 			pr_err("Failed to register UP Board pinctrl mapping");
-			goto fail_pinctrl_reg;
+			return ret;
 		}
 	}
 
-	if (board_info->i2c_devices) {
-		ret = i2c_register_board_info(UP_BOARD_GPIO_EXP_I2C_BUS,
-					      board_info->i2c_devices,
-					      board_info->num_i2c_devices);
+	/* Register devices specific to board version */
+	if (board_info->init_devices) {
+		ret = board_info->init_devices();
 		if (ret) {
-			pr_err("Failed to register UP Board i2c devices");
-			goto fail_i2c_register;
+			pr_err("Failed to register UP Board devices");
+			return ret;
 		}
 	}
 
+	/* Register devices common to all board versions */
 	if (spidev0) {
 		ret = spi_register_board_info(&up_spidev0_info, 1);
 		if (ret) {
 			pr_err("Failed to register UP Board spidev0 device");
-			goto fail_spidev0_register;
+			return -ENODEV;
 		}
 	}
 
 	/* Create a virtual device to manage the UP Board GPIO pin header */
 	up_pinctrl_dev = platform_device_alloc("up-pinctrl", -1);
 	if (!up_pinctrl_dev) {
-		ret = -ENOMEM;
-		goto fail_pinctrl_dev_alloc;
+		pr_err("Failed to allocate UP pinctrl platform device");
+		return -ENOMEM;
 	}
+
 	ret = platform_device_add(up_pinctrl_dev);
-	if (ret)
-		goto fail_pinctrl_dev_add;
+	if (ret) {
+		pr_err("Failed to allocate UP pinctrl platform device");
+		platform_device_put(up_pinctrl_dev);
+		return ret;
+	}
 
 	return 0;
-
-fail_pinctrl_dev_add:
-	platform_device_put(up_pinctrl_dev);
-fail_pinctrl_dev_alloc:
-fail_spidev0_register:
-fail_i2c_register:
-fail_pinctrl_reg:
-	return ret;
 }
 
 static void __exit
@@ -259,10 +347,10 @@ up_board_exit(void)
 	platform_device_unregister(up_pinctrl_dev);
 }
 
-/* Using subsys_initcall to ensure that pinctrl mappings are registered
- * before corresponding devices are enumerated
+/* Using arch_initcall to ensure that i2c devices are registered
+ * before the I2C adapters are enumerated
  */
-subsys_initcall(up_board_init);
+arch_initcall(up_board_init_devices);
 module_exit(up_board_exit);
 
 MODULE_AUTHOR("Dan O'Donovan <dan@emutex.com>");
