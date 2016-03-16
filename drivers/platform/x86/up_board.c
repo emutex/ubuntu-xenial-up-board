@@ -44,6 +44,10 @@ static bool spidev0 = true;
 module_param(spidev0, bool, S_IRUGO);
 MODULE_PARM_DESC(spidev0, "register a spidev device on SPI bus 2-0");
 
+static bool spidev1 = true;
+module_param(spidev1, bool, S_IRUGO);
+MODULE_PARM_DESC(spidev1, "register a spidev device on SPI bus 2-1");
+
 /* On the UP board, if the ODEn bit is set on the pad configuration
  * it seems to impair some functions on the I/O header such as UART, SPI
  * and even I2C.  So we disable it for all header pins by default.
@@ -183,10 +187,9 @@ static struct regulator_consumer_supply vref3v3_consumers[] = {
 	REGULATOR_SUPPLY("vref", "2-0054"),
 };
 
-static struct spi_board_info up_spidev0_info __initdata = {
+static struct spi_board_info up_spidev_info __initdata = {
 	.modalias	= "spidev",
 	.bus_num	= UP_BOARD_SPIDEV_BUS_NUM,
-	.chip_select	= 0,
 	.max_speed_hz   = UP_BOARD_SPIDEV_MAX_CLK,
 };
 
@@ -317,9 +320,18 @@ up_board_init_devices(void) {
 
 	/* Register devices common to all board versions */
 	if (spidev0) {
-		ret = spi_register_board_info(&up_spidev0_info, 1);
+		up_spidev_info.chip_select = 0;
+		ret = spi_register_board_info(&up_spidev_info, 1);
 		if (ret) {
 			pr_err("Failed to register UP Board spidev0 device");
+			return -ENODEV;
+		}
+	}
+	if (spidev1) {
+		up_spidev_info.chip_select = 1;
+		ret = spi_register_board_info(&up_spidev_info, 1);
+		if (ret) {
+			pr_err("Failed to register UP Board spidev1 device");
 			return -ENODEV;
 		}
 	}
