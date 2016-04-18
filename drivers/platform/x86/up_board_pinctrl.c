@@ -921,10 +921,21 @@ static struct pinctrl_desc up_pinctrl_desc = {
 
 static const struct dmi_system_id up_board_id_table[] = {
 	{
+		/* TODO - remove when new BIOS is available with
+		 * correct board version numbering
+		 */
 		.matches = {
 			DMI_MATCH(DMI_SYS_VENDOR, "AAEON"),
 			DMI_MATCH(DMI_BOARD_NAME, "UP-CHT01"),
 			DMI_MATCH(DMI_BOARD_VERSION, "V1.0"),
+		},
+		.driver_data = (void *)&up_board_info_v0_3
+	},
+	{
+		.matches = {
+			DMI_MATCH(DMI_SYS_VENDOR, "AAEON"),
+			DMI_MATCH(DMI_BOARD_NAME, "UP-CHT01"),
+			DMI_MATCH(DMI_BOARD_VERSION, "V0.3"),
 		},
 		.driver_data = (void *)&up_board_info_v0_3
 	},
