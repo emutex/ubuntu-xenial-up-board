@@ -156,6 +156,34 @@ static struct pinctrl_map up_pinmux_maps_v0_3[] __initdata = {
 	UP_PIN_MAP_CONF_I2C_PULLUP("808622C1:01", "INT33FF:00", "i2c1"),
 };
 
+static struct pinctrl_map up_pinmux_maps_v0_4[] __initdata = {
+	UP_PIN_MAP_MUX_GROUP("8086228A:00", "up-pinctrl", "uart1"),
+	UP_PIN_MAP_MUX_GROUP("808622C1:00", "up-pinctrl", "i2c0"),
+	UP_PIN_MAP_MUX_GROUP("808622C1:01", "up-pinctrl", "i2c1"),
+	UP_PIN_MAP_MUX_GROUP("808622A8:00", "up-pinctrl", "i2s0"),
+	UP_PIN_MAP_MUX_GROUP("80862288:00", "up-pinctrl", "pwm0"),
+	UP_PIN_MAP_MUX_GROUP("80862288:01", "up-pinctrl", "pwm1"),
+	UP_PIN_MAP_MUX_GROUP("8086228E:01", "up-pinctrl", "spi2"),
+	UP_PIN_MAP_MUX_GROUP("2-0054",      "up-pinctrl", "adc0"),
+
+	UP_PIN_MAP_MUX_GROUP("8086228A:00", "INT33FF:00", "uart1"),
+	UP_PIN_MAP_MUX_GROUP("808622C1:00", "INT33FF:00", "i2c0"),
+	UP_PIN_MAP_MUX_GROUP("808622C1:01", "INT33FF:00", "i2c1"),
+	UP_PIN_MAP_MUX_GROUP("808622C1:02", "INT33FF:00", "i2c2"),
+	UP_PIN_MAP_MUX_GROUP("808622A8:00", "INT33FF:00", "lpe"),
+	UP_PIN_MAP_MUX_GROUP("80862288:00", "INT33FF:03", "pwm0"),
+	UP_PIN_MAP_MUX_GROUP("80862288:01", "INT33FF:03", "pwm1"),
+	UP_PIN_MAP_MUX_GROUP("8086228E:01", "INT33FF:03", "spi2"),
+
+	UP_PIN_MAP_CONF_ODEN("8086228A:00", "INT33FF:00", "uart1"),
+	UP_PIN_MAP_CONF_ODEN("808622C1:00", "INT33FF:00", "i2c0"),
+	UP_PIN_MAP_CONF_ODEN("808622C1:01", "INT33FF:00", "i2c1"),
+	UP_PIN_MAP_CONF_ODEN("808622A8:00", "INT33FF:00", "lpe"),
+	UP_PIN_MAP_CONF_ODEN("80862288:00", "INT33FF:03", "pwm0"),
+	UP_PIN_MAP_CONF_ODEN("80862288:01", "INT33FF:03", "pwm1"),
+	UP_PIN_MAP_CONF_ODEN("8086228E:01", "INT33FF:03", "spi2"),
+};
+
 static struct platform_device *up_pinctrl_dev;
 
 static struct pca953x_platform_data gpio_exp0_pdata = {
@@ -248,7 +276,21 @@ static struct up_board_info up_board_info_v0_3 = {
 	.init_devices = up_board_init_devices_v0_3,
 };
 
+static struct up_board_info up_board_info_v0_4 = {
+	.pinmux_maps = up_pinmux_maps_v0_4,
+	.num_pinmux_maps = ARRAY_SIZE(up_pinmux_maps_v0_4),
+	.init_devices = up_board_init_devices_v0_3,
+};
+
 static const struct dmi_system_id up_board_id_table[] = {
+	{
+		.matches = {
+			DMI_MATCH(DMI_SYS_VENDOR, "AAEON"),
+			DMI_MATCH(DMI_BOARD_NAME, "UP-CHT01"),
+			DMI_MATCH(DMI_BOARD_VERSION, "V0.4"),
+		},
+		.driver_data = (void *)&up_board_info_v0_4
+	},
 	{
 		/* TODO - remove when new BIOS is available with
 		 * correct board version numbering

@@ -61,6 +61,7 @@ struct up_soc_gpio_info {
 	unsigned offset;
 	int gpio;
 	int irq;
+	int flags;
 };
 
 /* Information for a single I/O pin on the UP board */
@@ -77,14 +78,24 @@ struct up_pin_info {
 	bool func_enabled;
 };
 
+struct up_cpld_led_info {
+	unsigned offset;
+	const char *name;
+};
+
 /* Information for the CPLD featured on later UP board revisions */
 struct up_cpld_info {
 	struct up_soc_gpio_info strobe_gpio;
 	struct up_soc_gpio_info reset_gpio;
-	struct up_soc_gpio_info data_gpio;
+	struct up_soc_gpio_info data_in_gpio;
+	struct up_soc_gpio_info data_out_gpio;
 	struct up_soc_gpio_info oe_gpio;
-	u32 dir_reg;
+	u64 dir_reg;
 	bool do_verify;
+	bool do_strobe_after_write;
+	unsigned dir_reg_size;
+	struct up_cpld_led_info *leds;
+	unsigned num_leds;
 };
 
 struct up_board_info {
@@ -121,6 +132,14 @@ static struct up_soc_gpiochip_info chip_cht_N  = { .name = "INT33FF:01" };
 static struct up_soc_gpiochip_info chip_cht_E  = { .name = "INT33FF:02" };
 static struct up_soc_gpiochip_info chip_cht_SE = { .name = "INT33FF:03" };
 
+#define SOC_GPIO(c, o, f)		\
+	{				\
+		.ci	= (c),		\
+		.offset	= (o),		\
+		.flags	= (f),		\
+	}
+#define SOC_GPIO_INPUT(c, o) SOC_GPIO(c, o, GPIOF_IN)
+#define SOC_GPIO_OUTPUT(c, o) SOC_GPIO(c, o, GPIOF_OUT_INIT_LOW)
 #define GPIO_PIN(c, o, dpin, din, dout, dfunc, mpin, mgpio, mfunc) \
 	{						\
 		.soc_gpio.ci		= (c),		\
@@ -163,10 +182,8 @@ static struct up_soc_gpiochip_info chip_cht_SE = { .name = "INT33FF:03" };
 
 #define N_GPIO 28
 
-#define CPLD_REG_SIZE		(31)
-
 /* Initial configuration assumes all pins as GPIO inputs */
-#define CPLD_DIR_REG_INIT	(0x0FFFFFFF)
+#define CPLD_DIR_REG_INIT	(0x00FFFFFFFULL)
 
 /* Different mechanisms for controlling UP board header pin configurations */
 enum {
@@ -299,17 +316,78 @@ static struct up_pin_info up_pins_v0_3[N_GPIO] = {
 };
 
 static struct up_cpld_info up_cpld_v0_3 = {
-	.strobe_gpio	= { .ci = &chip_cht_N, .offset = 21 },
-	.reset_gpio	= { .ci = &chip_cht_N, .offset = 17 },
-	.data_gpio	= { .ci = &chip_cht_N, .offset = 12 },
-	.oe_gpio	= { .ci = &chip_cht_SW, .offset = 43 },
-	.dir_reg	= CPLD_DIR_REG_INIT,
-	.do_verify	= false,
+	.strobe_gpio		= SOC_GPIO_OUTPUT(&chip_cht_N, 21),
+	.reset_gpio		= SOC_GPIO_OUTPUT(&chip_cht_N, 17),
+	.data_in_gpio		= SOC_GPIO_OUTPUT(&chip_cht_N, 12),
+	.data_out_gpio		= SOC_GPIO_INPUT(&chip_cht_N, 19),
+	.oe_gpio		= SOC_GPIO_OUTPUT(&chip_cht_SW, 43),
+	.dir_reg		= CPLD_DIR_REG_INIT,
+	.do_verify		= false,
+	.do_strobe_after_write	= true,
+	.dir_reg_size		= 31,
 };
 
 static struct up_board_info up_board_info_v0_3 = {
 	.pins = up_pins_v0_3,
 	.cpld = &up_cpld_v0_3,
+	.pincfg_mode = UP_PINCFG_MODE_CPLD,
+};
+
+/* UP Board v0.4 uses a CPLD to provide I/O signal buffers and mux switching */
+static struct up_pin_info up_pins_v0_4[N_GPIO] = {
+	GPIO_PIN_V0_3(&chip_cht_SW, 33,  9, FDIR_OUT, 28, 0, 1),	/*  0 */
+	GPIO_PIN_V0_3(&chip_cht_SW, 37, 23, FDIR_OUT, 28, 0, 1),	/*  1 */
+	GPIO_PIN_V0_3(&chip_cht_SW, 32,  0, FDIR_OUT, 29, 0, 1),	/*  2 */
+	GPIO_PIN_V0_3(&chip_cht_SW, 35,  1, FDIR_OUT, 29, 0, 1),	/*  3 */
+	GPIO_PIN_V0_3(&chip_cht_E,  18,  2, FDIR_IN,  30, 0, 1),	/*  4 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_E,  21, 10, FDIR_NONE),		/*  5 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_E,  12, 11, FDIR_NONE),		/*  6 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE, 48, 22, FDIR_NONE),		/*  7 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE,  7, 21, FDIR_OUT),		/*  8 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE,  3,  7, FDIR_IN),		/*  9 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE,  6,  6, FDIR_OUT),		/* 10 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE,  4,  8, FDIR_OUT),		/* 11 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE,  5, 24, FDIR_OUT),		/* 12 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE,  1, 12, FDIR_OUT),		/* 13 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SW, 13, 15, FDIR_OUT),		/* 14 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SW,  9, 16, FDIR_IN),		/* 15 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SW, 11, 25, FDIR_IN),		/* 16 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SW,  8,  3, FDIR_OUT),		/* 17 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SW, 50, 17, FDIR_OUT),		/* 18 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SW, 54, 13, FDIR_OUT),		/* 19 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SW, 52, 26, FDIR_IN),		/* 20 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SW, 55, 27, FDIR_OUT),		/* 21 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE, 12,  5, FDIR_OUT),		/* 22 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE, 15, 18, FDIR_OUT),		/* 23 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE, 18, 19, FDIR_OUT),		/* 24 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE, 11, 20, FDIR_OUT),		/* 25 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE, 14, 14, FDIR_OUT),		/* 26 */
+	GPIO_PIN_V0_3_NO_MUX(&chip_cht_SE,  8,  4, FDIR_OUT),		/* 27 */
+};
+
+static struct up_cpld_led_info up_cpld_leds_v0_4[] = {
+	{ .offset = 31, .name = "yellow", },
+	{ .offset = 32, .name = "green", },
+	{ .offset = 33, .name = "red", },
+};
+
+static struct up_cpld_info up_cpld_v0_4 = {
+	.strobe_gpio		= SOC_GPIO_OUTPUT(&chip_cht_N, 21),
+	.reset_gpio		= SOC_GPIO_OUTPUT(&chip_cht_E, 15),
+	.data_in_gpio		= SOC_GPIO_OUTPUT(&chip_cht_E, 13),
+	.data_out_gpio		= SOC_GPIO_INPUT(&chip_cht_E, 23),
+	.oe_gpio		= SOC_GPIO_OUTPUT(&chip_cht_SW, 43),
+	.dir_reg		= CPLD_DIR_REG_INIT,
+	.do_verify		= true,
+	.do_strobe_after_write	= false,
+	.dir_reg_size		= 34,
+	.leds			= up_cpld_leds_v0_4,
+	.num_leds		= ARRAY_SIZE(up_cpld_leds_v0_4),
+};
+
+static struct up_board_info up_board_info_v0_4 = {
+	.pins = up_pins_v0_4,
+	.cpld = &up_cpld_v0_4,
 	.pincfg_mode = UP_PINCFG_MODE_CPLD,
 };
 
@@ -345,7 +423,7 @@ static const struct pinctrl_pin_desc up_pins[] = {
 	PINCTRL_PIN(27, "GPIO27"),
 };
 
-static const unsigned uart1_pins[] = { 14, 15 };
+static const unsigned uart1_pins[] = { 14, 15, 16, 17 };
 static const unsigned uart2_pins[] = { 25, 27 };
 static const unsigned i2c0_pins[]  = { 0, 1 };
 static const unsigned i2c1_pins[]  = { 2, 3 };
@@ -396,26 +474,24 @@ static const struct up_function pin_functions[] = {
  * the SoC to the 28 GPIO header pins at 3.3V, and for this it needs to be
  * configured with direction (input/output) for each GPIO.  In addition, it
  * manages 3 mux switches (2 for I2C bus pins, 1 for ADC pin) which need to be
- * configured on/off.
+ * configured on/off, and 3 LEDs.
  *
- * A 31-bit register value is loaded into the CPLD at run-time to configure the
- * 28 GPIO level shifters and 3 mux switches.  This register value is loaded
- * a 2-wire data interface consisting of a strobe and data line.  The data line
- * is sampled on each rising edge that appears on the strobe line.  A reset
- * signal (active low) is used to reset internal counters and state prior to
- * loading a new register value.  An output-enable signal is provided, initially
- * disabled which puts all header pins in a HiZ state until a valid pin
- * configuration is loaded by this driver.
+ * A register value is loaded into the CPLD at run-time to configure the
+ * 28 GPIO level shifters, 3 mux switches and 3 LEDs.  This register value is
+ * loaded via a 2-wire data interface consisting of a strobe and data line.  The
+ * data line is sampled on each rising edge that appears on the strobe line.  A
+ * reset signal (active low) is used to reset internal counters and state prior
+ * to loading a new register value.  An output-enable signal is provided,
+ * initially disabled which puts all header pins in a HiZ state until a valid
+ * pin configuration is loaded by this driver.
  *
- * The 31-bit register value is clocked into the CPLD bit-by-bit, and then read
- * back.  However, in the current implementation, the read-back value must be
- * ignored because it is not set correctly.
- * A total of 64 rising edges on the strobe signal are required, following the
+ * The register value is clocked into the CPLD bit-by-bit, and then read back.
+ * A total of 69 rising edges on the strobe signal are required, following the
  * reset pulse, before the new register value is "latched" by the CPLD.
  */
 static int cpld_configure(struct up_cpld_info *cpld)
 {
-	u32 dir_reg_verify = 0;
+	u64 dir_reg_verify = 0;
 	int i;
 
 	/* Reset the CPLD internal counters */
@@ -423,37 +499,41 @@ static int cpld_configure(struct up_cpld_info *cpld)
 	gpiod_set_value(cpld->reset_gpio.desc, 1);
 
 	/* Update the CPLD dir register */
-	gpiod_direction_output(cpld->data_gpio.desc, 0);
-	for (i = CPLD_REG_SIZE - 1; i >= 0; i--) {
+	for (i = cpld->dir_reg_size - 1; i >= 0; i--) {
 		/* Bring STB low initially */
 		gpiod_set_value(cpld->strobe_gpio.desc, 0);
 		/* Load the next bit value, MSb first */
-		gpiod_set_value(cpld->data_gpio.desc,
+		gpiod_set_value(cpld->data_in_gpio.desc,
 				(cpld->dir_reg >> i) & 0x1);
 		/* Bring STB high to latch the bit value */
 		gpiod_set_value(cpld->strobe_gpio.desc, 1);
 	}
 
-	/* Issue a dummy STB cycle, change data gpio dir for read-back */
-	gpiod_set_value(cpld->strobe_gpio.desc, 0);
-	gpiod_direction_input(cpld->data_gpio.desc);
-	gpiod_set_value(cpld->strobe_gpio.desc, 1);
+	if (cpld->do_strobe_after_write) {
+		/* Issue a dummy STB cycle after writing the register value */
+		gpiod_set_value(cpld->strobe_gpio.desc, 0);
+		gpiod_set_value(cpld->strobe_gpio.desc, 1);
+	}
 
 	/* Read back the value */
-	for (i = CPLD_REG_SIZE - 1; i >= 0; i--) {
+	for (i = cpld->dir_reg_size - 1; i >= 0; i--) {
 		/* Cycle the strobe and read the data pin */
 		gpiod_set_value(cpld->strobe_gpio.desc, 0);
 		gpiod_set_value(cpld->strobe_gpio.desc, 1);
-		dir_reg_verify |= gpiod_get_value(cpld->data_gpio.desc) << i;
+		dir_reg_verify |=
+			(u64)gpiod_get_value(cpld->data_out_gpio.desc) << i;
 	}
 
-	/* Verify that the CPLD dir register was written successfully */
+	/* Verify that the CPLD dir register was written successfully
+	 * In some hardware revisions, data_out_gpio isn't actually
+	 * connected so we skip this step if do_verify is not set
+	 */
 	if (cpld->do_verify && (dir_reg_verify != cpld->dir_reg)) {
-		pr_err("CPLD update verification failed\n");
+		pr_err("CPLD verify error (expected: %llX, actual: %llX)\n",
+		       cpld->dir_reg, dir_reg_verify);
 		return -EIO;
 	}
 
-	/* Ensure the CPLD outputs are enabled at this point */
 	/* Issue a dummy STB cycle to latch the dir register updates */
 	gpiod_set_value(cpld->strobe_gpio.desc, 0);
 	gpiod_set_value(cpld->strobe_gpio.desc, 1);
@@ -525,12 +605,13 @@ static int up_gpio_pincfg_cpld(struct platform_device *pdev,
 	struct up_soc_gpio_info *cpld_gpios[] = {
 		&cpld->strobe_gpio,
 		&cpld->reset_gpio,
-		&cpld->data_gpio,
+		&cpld->data_in_gpio,
+		&cpld->data_out_gpio,
 		&cpld->oe_gpio,
 	};
 	int i, ret;
 
-	/* Initialise the CPLD config GPIOs as outputs, initially low */
+	/* Initialise the CPLD config input GPIOs as outputs, initially low */
 	for (i = 0; i < ARRAY_SIZE(cpld_gpios); i++) {
 		struct up_soc_gpio_info *gpio_info = cpld_gpios[i];
 
@@ -539,7 +620,7 @@ static int up_gpio_pincfg_cpld(struct platform_device *pdev,
 			return ret;
 
 		ret = devm_gpio_request_one(&pdev->dev, gpio_info->gpio,
-					    GPIOF_OUT_INIT_LOW,
+					    gpio_info->flags,
 					    dev_name(&pdev->dev));
 		if (ret)
 			return ret;
@@ -921,6 +1002,14 @@ static struct pinctrl_desc up_pinctrl_desc = {
 
 static const struct dmi_system_id up_board_id_table[] = {
 	{
+		.matches = {
+			DMI_MATCH(DMI_SYS_VENDOR, "AAEON"),
+			DMI_MATCH(DMI_BOARD_NAME, "UP-CHT01"),
+			DMI_MATCH(DMI_BOARD_VERSION, "V0.4"),
+		},
+		.driver_data = (void *)&up_board_info_v0_4
+	},
+	{
 		/* TODO - remove when new BIOS is available with
 		 * correct board version numbering
 		 */
@@ -1043,6 +1132,10 @@ static int up_pinctrl_remove(struct platform_device *pdev)
 
 	gpiochip_remove(&up_pctrl->chip);
 	pinctrl_unregister(up_pctrl->pctldev);
+
+	/* Disable the CPLD outputs */
+	if (up_pctrl->board->cpld)
+		gpiod_set_value(up_pctrl->board->cpld->oe_gpio.desc, 0);
 
 	return 0;
 }
