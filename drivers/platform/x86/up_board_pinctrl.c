@@ -544,12 +544,12 @@ static int cpld_configure(struct up_cpld_info *cpld)
 static int cpld_set_value(struct up_cpld_info *cpld, unsigned int offset,
 			  int value)
 {
-	u32 old_regval = cpld->dir_reg;
+	u64 old_regval = cpld->dir_reg;
 
 	if (value)
-		cpld->dir_reg |= 1 << offset;
+		cpld->dir_reg |= 1ULL << offset;
 	else
-		cpld->dir_reg &= ~(1 << offset);
+		cpld->dir_reg &= ~(1ULL << offset);
 
 	if (cpld->dir_reg != old_regval)
 		return cpld_configure(cpld);
