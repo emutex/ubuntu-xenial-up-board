@@ -1,0 +1,8 @@
+linux-upboard (4.4.0-1.1) UNRELEASED; urgency=low
+
+  [ ubilinux team ]
+
+  * Added UP board support patchset for the 4.4 kernel line
+  * Added Cherry Trail HDMI audio support patchset
+
+ -- ubilinux team <ubilinux@emutex.com>  Thu, 11 Aug 2016 13:04:41 +0100
