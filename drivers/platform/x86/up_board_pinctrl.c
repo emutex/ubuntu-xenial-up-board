@@ -99,6 +99,7 @@ struct up_cpld_info {
 	unsigned dir_reg_size;
 	struct up_cpld_led_info *leds;
 	unsigned num_leds;
+	spinlock_t lock;
 };
 
 struct up_board_info {
@@ -547,18 +548,25 @@ static int cpld_configure(struct up_cpld_info *cpld)
 static int cpld_set_value(struct up_cpld_info *cpld, unsigned int offset,
 			  int value)
 {
-	u64 old_regval = cpld->dir_reg;
+	u64 old_regval;
+	int ret = 0;
+
+	spin_lock(&cpld->lock);
+
+	old_regval = cpld->dir_reg;
 
 	if (value)
 		cpld->dir_reg |= 1ULL << offset;
 	else
 		cpld->dir_reg &= ~(1ULL << offset);
 
+	/* Only update the CPLD register if it has changed */
 	if (cpld->dir_reg != old_regval)
-		return cpld_configure(cpld);
+		ret = cpld_configure(cpld);
 
-	/* No change in CPLD register */
-	return 0;
+	spin_unlock(&cpld->lock);
+
+	return ret;
 }
 
 static int up_pincfg_set(struct up_board_info *board, int offset, int value)
@@ -613,6 +621,8 @@ static int up_gpio_pincfg_cpld(struct platform_device *pdev,
 		&cpld->oe_gpio,
 	};
 	int i, ret;
+
+	spin_lock_init(&cpld->lock);
 
 	/* Initialise the CPLD config input GPIOs as outputs, initially low */
 	for (i = 0; i < ARRAY_SIZE(cpld_gpios); i++) {
