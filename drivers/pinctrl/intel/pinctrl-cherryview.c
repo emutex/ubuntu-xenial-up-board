@@ -1133,7 +1133,7 @@ static int chv_config_set_oden(struct chv_pinctrl *pctrl, unsigned pin,
 	unsigned long flags;
 	u32 ctrl1;
 
-	raw_spin_lock_irqsave(&pctrl->lock, flags);
+	raw_spin_lock_irqsave(&chv_lock, flags);
 	ctrl1 = readl(reg);
 
 	if (enable)
@@ -1142,7 +1142,7 @@ static int chv_config_set_oden(struct chv_pinctrl *pctrl, unsigned pin,
 		ctrl1 &= ~CHV_PADCTRL1_ODEN;
 
 	chv_writel(ctrl1, reg);
-	raw_spin_unlock_irqrestore(&pctrl->lock, flags);
+	raw_spin_unlock_irqrestore(&chv_lock, flags);
 
 	return 0;
 }
