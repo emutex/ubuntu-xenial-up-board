@@ -10,6 +10,7 @@
 #include <linux/i2c.h>
 #include <linux/module.h>
 #include <linux/of.h>
+#include <linux/acpi.h>
 
 #include <linux/iio/iio.h>
 #include <linux/regulator/consumer.h>
@@ -137,10 +138,19 @@ static const struct of_device_id adc081c_of_match[] = {
 MODULE_DEVICE_TABLE(of, adc081c_of_match);
 #endif
 
+#ifdef CONFIG_ACPI
+static const struct acpi_device_id adc081c_acpi_match[] = {
+	{ "ADC081C", 0 },
+	{ }
+};
+MODULE_DEVICE_TABLE(acpi, adc081c_acpi_match);
+#endif
+
 static struct i2c_driver adc081c_driver = {
 	.driver = {
 		.name = "adc081c",
 		.of_match_table = of_match_ptr(adc081c_of_match),
+		.acpi_match_table = ACPI_PTR(adc081c_acpi_match),
 	},
 	.probe = adc081c_probe,
 	.remove = adc081c_remove,
