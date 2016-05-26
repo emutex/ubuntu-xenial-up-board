@@ -164,7 +164,7 @@ static struct pinctrl_map up_pinmux_maps_v0_4[] __initdata = {
 	UP_PIN_MAP_MUX_GROUP("80862288:00", "up-pinctrl", "pwm0"),
 	UP_PIN_MAP_MUX_GROUP("80862288:01", "up-pinctrl", "pwm1"),
 	UP_PIN_MAP_MUX_GROUP("8086228E:01", "up-pinctrl", "spi2"),
-	UP_PIN_MAP_MUX_GROUP("2-0054",      "up-pinctrl", "adc0"),
+	UP_PIN_MAP_MUX_GROUP("i2c-ADC081C:00", "up-pinctrl", "adc0"),
 
 	UP_PIN_MAP_MUX_GROUP("8086228A:00", "INT33FF:00", "uart1"),
 	UP_PIN_MAP_MUX_GROUP("808622C1:00", "INT33FF:00", "i2c0"),
@@ -211,8 +211,12 @@ static struct i2c_board_info up_i2c_devices_v0_3[] __initdata = {
 	},
 };
 
-static struct regulator_consumer_supply vref3v3_consumers[] = {
+static struct regulator_consumer_supply vref3v3_consumers_v0_3[] = {
 	REGULATOR_SUPPLY("vref", "2-0054"),
+};
+
+static struct regulator_consumer_supply vref3v3_consumers_v0_4[] = {
+	REGULATOR_SUPPLY("vref", "i2c-ADC081C:00"),
 };
 
 static struct spi_board_info up_spidev_info __initdata = {
@@ -241,8 +245,8 @@ up_board_init_devices_v0_3(void)
 	int ret;
 
 	vreg = regulator_register_always_on(0, "fixed-3.3V",
-					    vref3v3_consumers,
-					    ARRAY_SIZE(vref3v3_consumers),
+					    vref3v3_consumers_v0_3,
+					    ARRAY_SIZE(vref3v3_consumers_v0_3),
 					    3300000);
 	if (!vreg) {
 		pr_err("Failed to register UP Board ADC vref regulator");
@@ -253,6 +257,23 @@ up_board_init_devices_v0_3(void)
 				      ARRAY_SIZE(up_i2c_devices_v0_3));
 	if (ret) {
 		pr_err("Failed to register UP Board i2c devices");
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
+static int __init
+up_board_init_devices_v0_4(void)
+{
+	struct platform_device *vreg;
+
+	vreg = regulator_register_always_on(0, "fixed-3.3V",
+					    vref3v3_consumers_v0_4,
+					    ARRAY_SIZE(vref3v3_consumers_v0_4),
+					    3300000);
+	if (!vreg) {
+		pr_err("Failed to register UP Board ADC vref regulator");
 		return -ENODEV;
 	}
 
@@ -279,7 +300,7 @@ static struct up_board_info up_board_info_v0_3 = {
 static struct up_board_info up_board_info_v0_4 = {
 	.pinmux_maps = up_pinmux_maps_v0_4,
 	.num_pinmux_maps = ARRAY_SIZE(up_pinmux_maps_v0_4),
-	.init_devices = up_board_init_devices_v0_3,
+	.init_devices = up_board_init_devices_v0_4,
 };
 
 static const struct dmi_system_id up_board_id_table[] = {
