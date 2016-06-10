@@ -44,7 +44,7 @@ static bool spidev0 = true;
 module_param(spidev0, bool, S_IRUGO);
 MODULE_PARM_DESC(spidev0, "register a spidev device on SPI bus 2-0");
 
-static bool spidev1 = true;
+static bool spidev1 = false;
 module_param(spidev1, bool, S_IRUGO);
 MODULE_PARM_DESC(spidev1, "register a spidev device on SPI bus 2-1");
 
