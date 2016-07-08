@@ -973,6 +973,13 @@ void __init acpi_subsystem_init(void)
 	}
 }
 
+static acpi_status acpi_bus_table_handler(u32 event, void *table, void *context)
+{
+	acpi_scan_table_handler(event, table, context);
+
+	return acpi_sysfs_table_handler(event, table, context);
+}
+
 static int __init acpi_bus_init(void)
 {
 	int result;
@@ -1017,6 +1024,8 @@ static int __init acpi_bus_init(void)
 	 * _PDC control method may load dynamic SSDT tables,
 	 * and we need to install the table handler before that.
 	 */
+	status = acpi_install_table_handler(acpi_bus_table_handler, NULL);
+
 	acpi_sysfs_init();
 
 	acpi_early_processor_set_pdc();
