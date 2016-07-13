@@ -591,6 +591,42 @@ static bool acpi_of_match_device(struct acpi_device *adev,
 	return false;
 }
 
+/**
+ * acpi_of_modalias - Like of_modalias_node for ACPI with DT ids
+ * @adev:	ACPI device object to match.
+ * @outstr:	Pointer to buffer for result
+ * @outlen:	Length of outstr value
+ *
+ * If we have a DT id set outstr to the first compatible string with the vendor
+ * prefix stripped, just like of_modalias_node does for devicetree.
+ *
+ * Returns 0 on success or negative errno on failure.
+ */
+int acpi_of_modalias(struct acpi_device *adev, char *outstr, size_t outlen)
+{
+	const union acpi_object *of_compatible;
+	const union acpi_object *obj;
+	const char *str, *chr;
+
+	of_compatible = adev->data.of_compatible;
+	if (!of_compatible)
+		return -ENODEV;
+
+	if (of_compatible->type == ACPI_TYPE_PACKAGE)
+		obj = of_compatible->package.elements;
+	else /* Must be ACPI_TYPE_STRING. */
+		obj = of_compatible;
+
+	str = obj->string.pointer;
+	chr = strchr(str, ',');
+	if (chr)
+		str = chr + 1;
+	strlcpy(outstr, str, outlen);
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(acpi_of_modalias);
+
 static bool __acpi_match_device_cls(const struct acpi_device_id *id,
 				    struct acpi_hardware_id *hwid)
 {
