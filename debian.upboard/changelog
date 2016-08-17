@@ -1,8 +1,8 @@
-linux-upboard (4.4.0-1.5) xenial; urgency=low
+linux-upboard (4.4.0-1.6) xenial; urgency=low
 
   [ ubilinux team ]
 
   * Added UP board support patchset for the 4.4 kernel line
   * Added Cherry Trail HDMI audio support patchset
 
- -- ubilinux team <ubilinux@emutex.com>  Fri, 12 Aug 2016 12:52:23 +0100
+ -- ubilinux team <ubilinux@emutex.com>  Wed, 17 Aug 2016 10:27:49 +0100
