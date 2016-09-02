@@ -1,3 +1,11 @@
+linux-upboard (4.4.0-1.7) xenial; urgency=low
+
+  [ ubilinux team ]
+
+  * Modified kernel config to resolve UART and I2C driver init issues
+
+ -- ubilinux team <ubilinux@emutex.com>  Thu, 01 Sep 2016 17:51:00 +0100
+
 linux-upboard (4.4.0-1.6) xenial; urgency=low
 
   [ ubilinux team ]
