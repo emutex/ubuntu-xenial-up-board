@@ -1,3 +1,11 @@
+linux-upboard (4.4.0-1.8) xenial; urgency=low
+
+  [ ubilinux team ]
+
+  * Attempt to fix broken header package dependency
+
+ -- ubilinux team <ubilinux@emutex.com>  Wed, 07 Sep 2016 22:11:00 +0100
+
 linux-upboard (4.4.0-1.7) xenial; urgency=low
 
   [ ubilinux team ]
@@ -6,11 +14,11 @@ linux-upboard (4.4.0-1.7) xenial; urgency=low
 
  -- ubilinux team <ubilinux@emutex.com>  Thu, 01 Sep 2016 17:51:00 +0100
 
-linux-upboard (4.4.0-1.6) xenial; urgency=low
+llinux-upboard (4.4.0-1.6) xenial; urgency=low
 
   [ ubilinux team ]
 
   * Added UP board support patchset for the 4.4 kernel line
   * Added Cherry Trail HDMI audio support patchset
 
- -- ubilinux team <ubilinux@emutex.com>  Wed, 17 Aug 2016 10:27:49 +0100
+ -- ubilinux team <ubilinux@emutex.com>  Fri, 12 Aug 2016 12:52:23 +0100
