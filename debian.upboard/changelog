@@ -1,3 +1,12 @@
+linux-upboard (4.4.0-1.10) xenial; urgency=low
+
+  [ ubilinux team ]
+
+  * 2nd attempt to fix broken header package dependency
+  * default up_board.spidev1 to false to leave pin 26 unreserved
+
+ -- ubilinux team <ubilinux@emutex.com>  Wed, 23 Sep 2016 06:58:00 +0100
+
 linux-upboard (4.4.0-1.8) xenial; urgency=low
 
   [ ubilinux team ]
