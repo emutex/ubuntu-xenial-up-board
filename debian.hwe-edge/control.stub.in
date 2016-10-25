@@ -8,45 +8,47 @@ Build-Depends:
  dh-systemd,
  cpio,
  kernel-wedge,
- kmod,
- makedumpfile [amd64 i386],
- libelf-dev,
- libnewt-dev,
- libiberty-dev,
- rsync,
- libdw-dev,
- libpci-dev,
- pkg-config,
- flex,
- bison,
- libunwind8-dev [amd64 arm64 armhf i386 powerpc ppc64el],
- openssl,
- libssl-dev,
- libaudit-dev,
- bc,
- python-dev,
- gawk,
- device-tree-compiler [powerpc],
- u-boot-tools [powerpc],
- libc6-dev-ppc64 [powerpc],
- libudev-dev,
- autoconf,
- automake,
- libtool,
- uuid-dev,
+ kmod <!stage1>,
+ makedumpfile [amd64 i386] <!stage1>,
+ libelf-dev <!stage1>,
+ libnewt-dev <!stage1>,
+ libiberty-dev <!stage1>,
+ rsync <!stage1>,
+ libdw-dev <!stage1>,
+ libpci-dev <!stage1>,
+ pkg-config <!stage1>,
+ flex <!stage1>,
+ bison <!stage1>,
+ libunwind8-dev [amd64 arm64 armhf i386 powerpc ppc64el] <!stage1>,
+ liblzma-dev <!stage1>,
+ openssl <!stage1>,
+ libssl-dev <!stage1>,
+ libaudit-dev <!stage1>,
+ bc <!stage1>,
+ python-dev <!stage1>,
+ gawk <!stage1>,
+ device-tree-compiler [powerpc] <!stage1>,
+ u-boot-tools [powerpc] <!stage1>,
+ libc6-dev-ppc64 [powerpc] <!stage1>,
+ libudev-dev <!stage1>,
+ autoconf <!stage1>,
+ automake <!stage1>,
+ libtool <!stage1>,
+ uuid-dev <!stage1>,
 Build-Depends-Indep:
- xmlto,
- docbook-utils,
- ghostscript,
- transfig,
- bzip2,
- sharutils,
- asciidoc,
-Vcs-Git: git://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux/+git/xenial -b lts-backport-yakkety
+ xmlto <!stage1>,
+ docbook-utils <!stage1>,
+ ghostscript <!stage1>,
+ transfig <!stage1>,
+ bzip2 <!stage1>,
+ sharutils <!stage1>,
+ asciidoc <!stage1>,
+Vcs-Git: git://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux/+git/xenial -b hwe-edge
 XS-Testsuite: autopkgtest
 #XS-Testsuite-Depends: gcc-4.7 binutils
 
 Package: linux-headers-PKGVER-ABINUM
+Build-Profiles: <!stage1>
 Architecture: all
 Multi-Arch: foreign
 Section: devel
@@ -58,6 +60,7 @@ Description: Header files related to Linux kernel version PKGVER
  /usr/share/doc/SRCPKGNAME-headers-PKGVER-ABINUM/debian.README.gz for details
 
 Package: SRCPKGNAME-tools-PKGVER-ABINUM
+Build-Profiles: <!stage1>
 Architecture: i386 amd64 armhf arm64 powerpc ppc64el s390x
 Section: devel
 Priority: optional
@@ -70,6 +73,7 @@ Description: Linux kernel version specific tools for version PKGVER-ABINUM
  You probably want to install linux-tools-PKGVER-ABINUM-<flavour>.
 
 Package: SRCPKGNAME-cloud-tools-PKGVER-ABINUM
+Build-Profiles: <!stage1>
 Architecture: i386 amd64 armhf
 Section: devel
 Priority: optional
