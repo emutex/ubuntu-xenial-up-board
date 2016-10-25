@@ -105,12 +105,6 @@ rsync -av --delete ${DEBIAN_SOURCE}/d-i/ ${DEBIAN_TARGET}/d-i
 rsync -av --delete ${DEBIAN_SOURCE}/config/ ${DEBIAN_TARGET}/config
 
 #
-# Turn off strong stack protection as it requires gcc 4.9+
-#
-sed -i -e 's/^.*CONFIG_CC_STACKPROTECTOR_REGULAR.*$/CONFIG_CC_STACKPROTECTOR_REGULAR=y/' -e 's/^CONFIG_CC_STACKPROTECTOR_STRONG.*$/# CONFIG_CC_STACKPROTECTOR_STRONG is not set/' ${DEBIAN_TARGET}/config/config.common.ubuntu
-sed -i 's/CONFIG_CC_STACKPROTECTOR_STRONG/CONFIG_CC_STACKPROTECTOR_REGULAR/' ${DEBIAN_TARGET}/config/annotations
-
-#
 # Update package and DTB settings from master.
 #
 rsync -av ${DEBIAN_SOURCE}/rules.d/*.mk ${DEBIAN_TARGET}/rules.d/
