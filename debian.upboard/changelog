@@ -3,8 +3,10 @@ linux-upboard (4.4.0-2.11) xenial; urgency=low
   [ ubilinux team ]
 
   * Updating to Ubuntu-4.4.0-47.68
+  * Fixed tuning issue causing write failures on Kingston M525 eMMC
+  * Enabled support for ACPI table override via initrd
 
- -- ubilinux team <ubilinux@emutex.com>  Tue, 15 Nov 2016 10:22:00 +0000
+ -- ubilinux team <ubilinux@emutex.com>  Sat, 26 Nov 2016 10:55:00 +0000
 
 linux-upboard (4.4.0-1.10) xenial; urgency=low
 
