@@ -147,7 +147,7 @@ git add ${DEBIAN_TARGET}/changelog
 #
 # Tell them what to do next ...
 #
-FINAL_VERSION_NAME="Ubuntu-lts-"`dpkg-parsechangelog -l${DEBIAN_TARGET}/changelog  | awk '/^Version:/ {print $2}'`
+FINAL_VERSION_NAME="Ubuntu-hwe-"`dpkg-parsechangelog -l${DEBIAN_TARGET}/changelog  | awk '/^Version:/ {print $2}'`
 FINAL_VERSION_TAG=`echo "${FINAL_VERSION_NAME}" | sed -e 's/~/_/'`
 echo "git commit -a -s -m 'UBUNTU: ${FINAL_VERSION_NAME}'"
 echo "git tag -s -m '${FINAL_VERSION_NAME}' '${FINAL_VERSION_TAG}'"
