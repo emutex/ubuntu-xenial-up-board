@@ -1,4 +1,617 @@
-linux-lts-yakkety (4.8.0-25.27~16.04.1) xenial; urgency=low
+linux-lts-zesty (4.10.0-8.10~16.04.1) xenial; urgency=low
+
+  [ Tim Gardner ]
+
+  * Release Tracking Bug
+    - LP: #1664217
+
+  * [Hyper-V] Bug fixes for storvsc (tagged queuing, error conditions)
+    (LP: #1663687)
+    - scsi: storvsc: Enable tracking of queue depth
+    - scsi: storvsc: Remove the restriction on max segment size
+    - scsi: storvsc: Enable multi-queue support
+    - scsi: storvsc: use tagged SRB requests if supported by the device
+    - scsi: storvsc: properly handle SRB_ERROR when sense message is present
+    - scsi: storvsc: properly set residual data length on errors
+
+  * Ubuntu16.10-KVM:Big configuration with multiple guests running SRIOV VFs
+    caused KVM host hung and all KVM guests down. (LP: #1651248)
+    - KVM: PPC: Book 3S: XICS cleanup: remove XICS_RM_REJECT
+    - KVM: PPC: Book 3S: XICS: correct the real mode ICP rejecting counter
+    - KVM: PPC: Book 3S: XICS: Fix potential issue with duplicate IRQ resends
+    - KVM: PPC: Book 3S: XICS: Implement ICS P/Q states
+    - KVM: PPC: Book 3S: XICS: Don't lock twice when checking for resend
+
+  * overlay: mkdir fails if directory exists in lowerdir in a user namespace
+    (LP: #1531747)
+    - SAUCE: overlayfs: Skip permission checking for trusted.overlayfs.* xattrs
+
+  * CVE-2016-1575 (LP: #1534961)
+    - SAUCE: overlayfs: Skip permission checking for trusted.overlayfs.* xattrs
+
+  * CVE-2016-1576 (LP: #1535150)
+    - SAUCE: overlayfs: Skip permission checking for trusted.overlayfs.* xattrs
+
+  * Miscellaneous Ubuntu changes
+    - SAUCE: md/raid6 algorithms: scale test duration for speedier boots
+    - SAUCE: Import aufs driver
+    - d-i: Build message-modules udeb for arm64
+    - rebase to v4.10-rc8
+
+  * Miscellaneous upstream changes
+    - Revert "UBUNTU: SAUCE: aufs -- remove .readlink assignment"
+    - Revert "UBUNTU: SAUCE: (no-up) aufs: for v4.9-rc1, support setattr_prepare()"
+    - Revert "UBUNTU: SAUCE: aufs -- Add flags argument to aufs_rename()"
+    - Revert "UBUNTU: SAUCE: aufs -- Convert to use xattr handlers"
+    - Revert "UBUNTU: SAUCE: Import aufs driver"
+
+  [ Upstream Kernel Changes ]
+
+  * rebase to v4.10-rc8
+
+ -- Tim Gardner <tim.gardner@canonical.com>  Mon, 06 Feb 2017 08:34:24 -0700
+
+linux (4.10.0-7.9) zesty; urgency=low
+
+  [ Tim Gardner ]
+
+  * Release Tracking Bug
+    - LP: #1662201
+
+  * AMDGPU support for CIK parts in kernel config? (LP: #1661887)
+    - [Config] CONFIG_DRM_AMDGPU_CIK=y
+
+  * regession tests failing after stackprofile test is run (LP: #1661030)
+    - fix regression with domain change in complain mode
+
+  * Permission denied and inconsistent behavior in complain mode with 'ip netns
+    list' command (LP: #1648903)
+    - fix regression with domain change in complain mode
+
+  * flock not mediated by 'k' (LP: #1658219)
+    - SAUCE: apparmor: flock mediation is not being enforced on cache check
+
+  * unexpected errno=13 and disconnected path when trying to open /proc/1/ns/mnt
+    from a unshared mount namespace (LP: #1656121)
+    - SAUCE: apparmor: null profiles should inherit parent control flags
+
+  * apparmor refcount leak of profile namespace when removing profiles
+    (LP: #1660849)
+    - SAUCE: apparmor: fix ns ref count link when removing profiles from policy
+
+  * tor in lxd: apparmor="DENIED" operation="change_onexec"
+    namespace="root//CONTAINERNAME_<var-lib-lxd>" profile="unconfined"
+    name="system_tor" (LP: #1648143)
+    - SAUCE: apparmor: Fix no_new_privs blocking change_onexec when using stacked
+      namespaces
+
+  * apparmor_parser hangs indefinitely when called by multiple threads
+    (LP: #1645037)
+    - SAUCE: apparmor: fix lock ordering for mkdir
+
+  * apparmor leaking securityfs pin count (LP: #1660846)
+    - SAUCE: apparmor: fix leak on securityfs pin count
+
+  * apparmor reference count leak when securityfs_setup_d_inode\ () fails
+    (LP: #1660845)
+    - SAUCE: apparmor: fix reference count leak when securityfs_setup_d_inode()
+      fails
+
+  * apparmor not checking error if security_pin_fs() fails (LP: #1660842)
+    - SAUCE: apparmor: fix not handling error case when securityfs_pin_fs() fails
+
+  * apparmor oops in bind_mnt when dev_path lookup fails (LP: #1660840)
+    - SAUCE: apparmor: fix oops in bind_mnt when dev_path lookup fails
+
+  * apparmor  auditing denied access of special apparmor .null fi\ le
+    (LP: #1660836)
+    - SAUCE: apparmor: Don't audit denied access of special apparmor .null file
+
+  * apparmor label leak when new label is unused (LP: #1660834)
+    - SAUCE: apparmor: fix label leak when new label is unused
+
+  * apparmor reference count bug in label_merge_insert() (LP: #1660833)
+    - SAUCE: apparmor: fix reference count bug in label_merge_insert()
+
+  * apparmor's raw_data file in securityfs is sometimes truncated (LP: #1638996)
+    - SAUCE: apparmor: fix replacement race in reading rawdata
+
+  * unix domain socket cross permission check failing with nested namespaces
+    (LP: #1660832)
+    - SAUCE: apparmor: fix cross ns perm of unix domain sockets
+
+  * Regression tests can not detect binfmt_elf mmpa semantic change
+    (LP: #1630069)
+    - SAUCE: apparmor: add flag to detect semantic change, to binfmt_elf mmap
+
+  * Support snaps inside of lxd containers (LP: #1611078)
+    - apparmor: add interface to be able to grab loaded policy
+    - apparmor: refactor aa_prepare_ns into prepare_ns and create_ns routines
+    - apparmor: add __aa_find_ns fn
+    - apparmor: add mkdir/rmdir interface to manage policy namespaces
+    - apparmor: fix oops in pivot_root mediation
+    - apparmor: fix warning that fn build_pivotroot discards const
+    - apparmor: add interface to advertise status of current task stacking
+    - apparmor: update policy permissions to consider ns being viewed/managed
+    - apparmor: add per ns policy management interface
+    - apparmor: bump domain stacking version to 1.2
+
+  * change_hat is logging failures during expected hat probing (LP: #1615893)
+    - SAUCE: apparmor: Fix auditing behavior for change_hat probing
+
+  * deleted files outside of the namespace are not being treated as disconnected
+    (LP: #1615892)
+    - SAUCE: apparmor: deleted dentries can be disconnected
+
+  * stacking to unconfined in a child namespace confuses mediation
+    (LP: #1615890)
+    - SAUCE: apparmor: special case unconfined when determining the mode
+
+  * apparmor module parameters can be changed after the policy is locked
+    (LP: #1615895)
+    - SAUCE: apparmor: fix: parameters can be changed after policy is locked
+
+  * AppArmor profile reloading causes an intermittent kernel BUG (LP: #1579135)
+    - SAUCE: apparmor: fix vec_unique for vectors larger than 8
+
+  * label vec reductions can result in reference labels instead of direct access
+    to labels (LP: #1615889)
+    - SAUCE: apparmor: reduction of vec to single entry is just that entry
+
+  * profiles from different namespaces can block other namespaces from being
+    able to load a profile (LP: #1615887)
+    - SAUCE: apparmor: profiles in one ns can affect mediation in another ns
+
+  * The label build for onexec when stacking is wrong (LP: #1615881)
+    - SAUCE: apparmor: Fix label build for onexec stacking.
+
+  * The inherit check for new to old label comparison for domain transitions is
+    wrong (LP: #1615880)
+    - SAUCE: apparmor: Fix new to old label comparison for domain transitions
+
+  * warning stack trace while playing with apparmor namespaces (LP: #1593874)
+    - SAUCE: apparmor: fix stack trace when removing namespace with profiles
+
+  * __label_update proxy comparison test is wrong (LP: #1615878)
+    - SAUCE: apparmor: Fix __label_update proxy comparison test
+
+  * reading /sys/kernel/security/apparmor/profiles requires CAP_MAC_ADMIN
+    (LP: #1560583)
+    - SAUCE: apparmor: Allow ns_root processes to open profiles file
+    - SAUCE: apparmor: Consult sysctl when reading profiles in a user ns
+
+  * policy namespace stacking (LP: #1379535)
+    - SAUCE: (no-up) apparmor: rebase of apparmor3.5-beta1 snapshot for 4.8
+    - SAUCE: add a sysctl to enable unprivileged user ns AppArmor policy loading
+
+  * brd module compiled as built-in (LP: #1593293)
+    - [Config] CONFIG_BLK_DEV_RAM=m
+
+  * Miscellaneous Ubuntu changes
+    - SAUCE: apparmor: Fix FTBFS due to bad include path
+    - SAUCE: apparmor: add data query support
+    - rebase to v4.10-rc7
+
+  * Miscellaneous upstream changes
+    - fixup backout policy view capable for forward port
+    - apparmor: fix: Rework the iter loop for label_update
+    - apparmor: add more assertions for updates/merges to help catch errors
+    - apparmor: Make pivot root transitions work with stacking
+    - apparmor: convert delegating deleted files to mediate deleted files
+    - apparmor: add missing parens. not a bug fix but highly recommended
+    - apparmor: add a stack_version file to allow detection of bug fixes
+    - apparmor: push path lookup into mediation loop
+    - apparmor: default to allowing unprivileged userns policy
+    - apparmor: fix: permissions test to view and manage policy
+    - apparmor: Add Basic ns cross check condition for ipc
+
+  [ Upstream Kernel Changes ]
+
+  * rebase to v4.10-rc7
+
+ -- Tim Gardner <tim.gardner@canonical.com>  Thu, 02 Feb 2017 10:48:30 -0700
+
+linux (4.10.0-6.8) zesty; urgency=low
+
+  [ Tim Gardner ]
+
+  * Release Tracking Bug
+    - LP: #1661300
+
+  * flock not mediated by 'k' (LP: #1658219)
+    - SAUCE: apparmor: flock mediation is not being enforced on cache check
+
+  * unexpected errno=13 and disconnected path when trying to open /proc/1/ns/mnt
+    from a unshared mount namespace (LP: #1656121)
+    - SAUCE: apparmor: null profiles should inherit parent control flags
+
+  * apparmor refcount leak of profile namespace when removing profiles
+    (LP: #1660849)
+    - SAUCE: apparmor: fix ns ref count link when removing profiles from policy
+
+  * tor in lxd: apparmor="DENIED" operation="change_onexec"
+    namespace="root//CONTAINERNAME_<var-lib-lxd>" profile="unconfined"
+    name="system_tor" (LP: #1648143)
+    - SAUCE: apparmor: Fix no_new_privs blocking change_onexec when using stacked
+      namespaces
+
+  * apparmor_parser hangs indefinitely when called by multiple threads
+    (LP: #1645037)
+    - SAUCE: apparmor: fix lock ordering for mkdir
+
+  * apparmor leaking securityfs pin count (LP: #1660846)
+    - SAUCE: apparmor: fix leak on securityfs pin count
+
+  * apparmor reference count leak when securityfs_setup_d_inode\ () fails
+    (LP: #1660845)
+    - SAUCE: apparmor: fix reference count leak when securityfs_setup_d_inode()
+      fails
+
+  * apparmor not checking error if security_pin_fs() fails (LP: #1660842)
+    - SAUCE: apparmor: fix not handling error case when securityfs_pin_fs() fails
+
+  * apparmor oops in bind_mnt when dev_path lookup fails (LP: #1660840)
+    - SAUCE: apparmor: fix oops in bind_mnt when dev_path lookup fails
+
+  * apparmor  auditing denied access of special apparmor .null fi\ le
+    (LP: #1660836)
+    - SAUCE: apparmor: Don't audit denied access of special apparmor .null file
+
+  * apparmor label leak when new label is unused (LP: #1660834)
+    - SAUCE: apparmor: fix label leak when new label is unused
+
+  * apparmor reference count bug in label_merge_insert() (LP: #1660833)
+    - SAUCE: apparmor: fix reference count bug in label_merge_insert()
+
+  * apparmor's raw_data file in securityfs is sometimes truncated (LP: #1638996)
+    - SAUCE: apparmor: fix replacement race in reading rawdata
+
+  * unix domain socket cross permission check failing with nested namespaces
+    (LP: #1660832)
+    - SAUCE: apparmor: fix cross ns perm of unix domain sockets
+
+  * Kdump through NMI SMP and single core not working on Ubuntu16.10
+    (LP: #1630924)
+    - hv: don't reset hv_context.tsc_page on crash
+
+  * [17.04 FEAT] Integrate kernel message catalogue for s390x into Ubuntu
+    distribution (LP: #1628889)
+    - SAUCE: s390: kernel message catalog
+
+  * Miscellaneous Ubuntu changes
+    - [Config] Drop powerpc ABI files
+
+ -- Tim Gardner <tim.gardner@canonical.com>  Wed, 01 Feb 2017 15:21:35 -0700
+
+linux (4.10.0-5.7) zesty; urgency=low
+
+  * [regression 4.8.0-14 -> 4.8.0-17] keyboard and touchscreen lost on Acer
+    Chromebook R11 (LP: #1630238)
+    - [Config] CONFIG_TOUCHSCREEN_ELAN=y,CONFIG_PINCTRL_CHERRYVIEW=y for amd64
+
+  * Enable CONFIG_NET_DROP_MONITOR=m in Ubuntu Kernel (LP: #1660634)
+    - [Config] Update annotations for CONFIG_NET_DROP_MONITOR
+
+  * Miscellaneous Ubuntu changes
+    - d-i: initrd needs msm_emac on amberwing platform.
+    - [Config] Remove powerpc architecture builds
+    - [Config] updateconfigs after removing powerpc configs
+    - [Config] Update annotations after removing powerpc configs
+    - SAUCE: Disable timers selftest for now
+    - Rebase to v4.10-rc6
+    - SAUCE: (no-up) Update zfs to 0.6.5.8-0ubuntu9
+    - Enable zfs build
+    - [Config] CONFIG_NET_DROP_MONITOR=m
+
+  [ Upstream Kernel Changes ]
+
+  * rebase to v4.10-rc6
+
+ -- Seth Forshee <seth.forshee@canonical.com>  Wed, 01 Feb 2017 12:26:09 -0600
+
+linux (4.10.0-4.6) zesty; urgency=low
+
+  * Miscellaneous upstream changes
+    - Revert "UBUNTU: Disable all flavors for the powerpc architecture"
+
+ -- Seth Forshee <seth.forshee@canonical.com>  Tue, 24 Jan 2017 07:13:15 -0600
+
+linux (4.10.0-3.5) zesty; urgency=low
+
+  * KVM module handling different per Architecture - ppc64el (LP: #1657734)
+    - [Config] powerpc: Add kvm-hv and kvm-pr to the generic inclusion list
+
+  * ENA network driver moved to -extra (LP: #1657767)
+    - [Config] Move Amazon ENA network driver to the main kernel package
+
+  * [Hyper-V] mkfs regression in 4.10 fixed by patch in "for-4.11"
+    (LP: #1657539)
+    - block: relax check on sg gap
+
+  * i915 module requests unreleased GUC firmware files (LP: #1626740)
+    - SAUCE: (no-up) i915: Remove MODULE_FIRMWARE statements for unreleased
+      firmware
+
+  * [17.04 FEAT] Integrate kernel message catalogue for s390x into Ubuntu
+    distribution (LP: #1628889)
+    - [Config] CONFIG_KMSG_IDS=y for s390
+    - SAUCE: s390 Kernel message catalog
+
+  * Miscellaneous Ubuntu changes
+    - ubuntu: vbox -- Update to 5.1.14-dfsg-1
+    - SAUCE: vbox -- remove .readlink assignment
+    - Enable vbox build
+    - [Config] CONFIG_DEFAULT_IOSCHED=cfq
+    - [Config] Bump CONFIG_NR_CPUS up to 256 on arm64
+    - [Config] Fix up s390x config options changed during 4.10 rebase
+    - [Config] Update annotations for 4.10
+    - Disable all flavors for the powerpc architecture
+
+  [ Upstream Kernel Changes ]
+
+  * rebase to v4.10-rc5
+
+ -- Seth Forshee <seth.forshee@canonical.com>  Mon, 23 Jan 2017 15:48:35 -0600
+
+linux (4.10.0-2.4) zesty; urgency=low
+
+  * Move some kernel modules to the main kernel package (part 2) (LP: #1655002)
+    - [Config] Add IBM power drivers to the inclusion list
+
+  * Miscellaneous Ubuntu changes
+    - [Config] linux-source Provides should not be a macro
+    - [Config] Correct the note URL for LATENCYTOP
+    - rebase to v4.10-rc4
+
+  [ Upstream Kernel Changes ]
+
+  * rebase to v4.10-rc4
+
+ -- Tim Gardner <tim.gardner@canonical.com>  Wed, 11 Jan 2017 07:17:34 -0700
+
+linux (4.10.0-1.3) zesty; urgency=low
+
+  [ Upstream Kernel Changes ]
+
+  * rebase to v4.10-rc3
+
+ -- Seth Forshee <seth.forshee@canonical.com>  Mon, 09 Jan 2017 11:41:13 -0600
+
+linux (4.10.0-0.2) zesty; urgency=low
+
+  * [17.04 FEAT] Build IMA and the TPM device drivers into the KVM on POWER
+    host/NV kernel (LP: #1643652)
+    - [Config] Update and enforce IMA options
+
+  * Miscellaneous Ubuntu changes
+    - [Config] Disble stack protector for powerpc-smp
+
+ -- Seth Forshee <seth.forshee@canonical.com>  Sat, 07 Jan 2017 19:07:55 -0600
+
+linux (4.10.0-0.1) zesty; urgency=low
+
+  * IP-over-DDP packets dropped (LP: #1559772)
+    - [Config] CONFIG_IPDDP=n
+
+  * Miscellaneous Ubuntu changes
+    - [Config] Update annotations with recent config changes
+    - SAUCE: aufs -- remove .readlink assignment
+    - disable vbox build
+    - disable ZFS build
+
+  [ Upstream Kernel Changes ]
+
+  * rebase to v4.10-rc2
+
+ -- Seth Forshee <seth.forshee@canonical.com>  Fri, 06 Jan 2017 07:55:57 -0600
+
+linux (4.9.0-11.12) zesty; urgency=low
+
+  * Miscellaneous Ubuntu changes
+    - UBUNTU: SAUCE: Add '-fno-pie -no-pie' to cflags for x86 selftests
+    - UBUNTU: SAUCE: (no-up) aufs: for v4.9-rc1, support setattr_prepare()
+
+  [ Upstream Kernel Changes ]
+
+  * rebase to v4.9
+
+ -- Tim Gardner <tim.gardner@canonical.com>  Mon, 12 Dec 2016 06:40:40 -0700
+
+linux (4.9.0-10.11) zesty; urgency=low
+
+  * d-i is missing usb support for platforms that use the xhci-platform driver
+    (LP: #1625222)
+    - d-i initrd needs additional usb modules to support the merlin platform
+
+  * Miscellaneous Ubuntu changes
+    - SAUCE: Import aufs driver
+    - SAUCE: aufs -- Convert to use xattr handlers
+    - SAUCE: aufs -- Add flags argument to aufs_rename()
+    - [Config] Enable aufs
+    - [Config] CONFIG_FSL_FMAN=y for powerpc
+    - SAUCE: powerpc64: Fix legacy cmpi mneomonic assumption
+    - [Config] Restore powerpc64-emb
+
+ -- Tim Gardner <tim.gardner@canonical.com>  Thu, 08 Dec 2016 20:38:12 -0700
+
+linux (4.9.0-9.10) zesty; urgency=low
+
+  * Kernel Fixes to get TCMU File Backed Optical to work (LP: #1646204)
+    - SAUCE: target/user: Fix use-after-free of tcmu_cmds if they are expired
+
+  * Yakkety: arm64: CONFIG_ARM64_ERRATUM_845719 isn't enabled (LP: #1647793)
+    - [Config] CONFIG_ARM64_ERRATUM_845719=y
+
+  * Update hio driver to 2.1.0.28 (LP: #1646643)
+    - SAUCE: hio: update to Huawei ES3000_V2 (2.1.0.28)
+
+  * Miscellaneous Ubuntu changes
+    - ubuntu: vbox -- Update to 5.1.10-dfsg-2
+    - Build vbox for ARCH=x86
+    - SAUCE: Add aufs driver
+    - SAUCE: aufs -- Convert to use xattr handlers
+    - SAUCE: aufs -- Updates for rename2
+    - SAUCE: Export symbols used by aufs
+    - [Config] Enable aufs
+
+ -- Tim Gardner <tim.gardner@canonical.com>  Mon, 05 Dec 2016 13:02:18 -0700
+
+linux (4.9.0-8.9) zesty; urgency=low
+
+  * Miscellaneous Ubuntu changes
+    - SAUCE: xr-usb-serial: only build for x86
+      Fixes s390x FTBS
+
+ -- Tim Gardner <tim.gardner@canonical.com>  Mon, 05 Dec 2016 12:35:33 -0700
+
+linux (4.9.0-7.8) zesty; urgency=low
+
+  * Driver for Exar USB UART (LP: #1645591)
+    - SAUCE: xr-usb-serial: Driver for Exar USB serial ports
+    - SAUCE: xr-usb-serial: interface for switching modes
+    - SAUCE: cdc-acm: Exclude Exar USB serial ports
+
+  [ Upstream Kernel Changes ]
+
+  * rebase to v4.9-rc8
+
+ -- Tim Gardner <tim.gardner@canonical.com>  Mon, 05 Dec 2016 07:41:58 -0700
+
+linux (4.9.0-6.7) zesty; urgency=low
+
+  * Miscellaneous Ubuntu changes
+    - Set build_arch=x86 for i386
+
+ -- Tim Gardner <tim.gardner@canonical.com>  Thu, 01 Dec 2016 21:00:11 -0700
+
+linux (4.9.0-5.6) zesty; urgency=low
+
+  * Miscellaneous Ubuntu changes
+    - [Debian] restore tools build
+    - Set build_arch=x86 for amd64 and x32
+
+ -- Tim Gardner <tim.gardner@canonical.com>  Thu, 01 Dec 2016 07:06:20 -0700
+
+linux (4.9.0-4.5) zesty; urgency=low
+
+  * linux: Staging modules should be unsigned (LP: #1642368)
+    - [Debian] Suppress module signing for staging drivers
+    - SAUCE: Add rtl drivers to signature inclusion list
+
+  * [17.04 FEAT] Build IMA and the TPM device drivers into the KVM on POWER
+    host/NV kernel (LP: #1643652)
+    - [Config] CONFIG_IMA=y
+
+  * Miscellaneous Ubuntu changes
+    - [Debian] config-check -- Make it easier to find annotations syntax errors
+    - [Config] Enable various drivers for ARM platforms
+    - [Config] Fix s390x config carnage
+    - [Config] Set CONFIG_KEXEC=y for all architectures
+    - [Config] Fix up CONFIG_I2C_SLAVE values
+    - [Config] Set CONFIG_WLAN_VENDOR_TI=y for all supported kernels
+    - [Config] Set CONFIG_PWM_PCA9685=m for amd64 and i386
+    - [Config] Set CONFIG_ZONE_DMA=m for amd64-generic
+    - [Config] Update annotations
+    - [Config] CONFIG_NR_CPUS=8192 for amd64
+
+ -- Tim Gardner <tim.gardner@canonical.com>  Mon, 28 Nov 2016 12:57:09 -0700
+
+linux (4.9.0-3.4) zesty; urgency=low
+
+  * Miscellaneous Ubuntu changes
+    - SAUCE: (namespace) security/integrity: Harden against malformed xattrs
+    - SAUCE: (namespace) block_dev: Support checking inode permissions in lookup_bdev()
+    - SAUCE: (namespace) block_dev: Check permissions towards block device inode when mounting
+    - SAUCE: (namespace) mtd: Check permissions towards mtd block device inode when mounting
+    - SAUCE: (namespace) fs: Allow superblock owner to change ownership of inodes
+    - SAUCE: (namespace) fs: Don't remove suid for CAP_FSETID for userns root
+    - SAUCE: (namespace) fs: Allow superblock owner to access do_remount_sb()
+    - SAUCE: (namespace) capabilities: Allow privileged user in s_user_ns to set security.* xattrs
+    - SAUCE: (namespace) fs: Allow CAP_SYS_ADMIN in s_user_ns to freeze and thaw filesystems
+    - SAUCE: (namespace) posix_acl: Export posix_acl_fix_xattr_userns() to modules
+    - SAUCE: (namespace) fuse: Add support for pid namespaces
+    - SAUCE: (namespace) fuse: Support fuse filesystems outside of init_user_ns
+    - SAUCE: (namespace) fuse: Translate ids in posix acl xattrs
+    - SAUCE: (namespace) fuse: Restrict allow_other to the superblock's namespace or a descendant
+    - SAUCE: (namespace) fuse: Allow user namespace mounts
+    - SAUCE: (namespace) ext4: Add support for unprivileged mounts from user namespaces
+    - SAUCE: (namespace) ext4: Add module parameter to enable user namespace mounts
+    - SAUCE: (namespace) block_dev: Forbid unprivileged mounting when device is opened for writing
+    - SAUCE: (noup) Update spl to 0.6.5.8-0ubuntu7, zfs to 0.6.5.8-2ubuntu1
+
+  * Miscellaneous upstream changes
+    - Revert "UBUNTU: SAUCE: overlayfs: Skip permission checking for trusted.overlayfs.* xattrs"
+
+  [ Upstream Kernel Changes ]
+
+  * rebase to v4.9-rc7
+
+ -- Tim Gardner <tim.gardner@canonical.com>  Tue, 22 Nov 2016 07:51:48 -0700
+
+linux (4.9.0-2.3) zesty; urgency=low
+
+  * Fix Kernel Crashing under IBM Virtual Scsi Driver (LP: #1642299)
+    - SAUCE: ibmvscsis: Rearrange functions for future patches
+    - SAUCE: ibmvscsis: Synchronize cmds at tpg_enable_store time
+    - SAUCE: ibmvscsis: Synchronize cmds at remove time
+    - SAUCE: ibmvscsis: Clean up properly if target_submit_cmd/tmr fails
+    - SAUCE: ibmvscsis: Return correct partition name/# to client
+    - SAUCE: ibmvscsis: Issues from Dan Carpenter/Smatch
+
+  * Move some kernel modules to the main kernel package (LP: #1642228)
+    - [Config] Move some powerpc kernel modules to the main kernel package
+
+  * linux: Staging modules should be unsigned (LP: #1642368)
+    - [Debian] Suppress module signing for staging drivers
+
+  * Miscellaneous Ubuntu changes
+    - SAUCE: UEFI: bpf: disable bpf when module security is enabled
+
+  [ Upstream Kernel Changes ]
+
+  * rebase to v4.9-rc6
+
+ -- Tim Gardner <tim.gardner@canonical.com>  Tue, 15 Nov 2016 10:59:54 -0700
+
+linux (4.9.0-1.2) zesty; urgency=low
+
+  * hio: SSD data corruption under stress test (LP: #1638700)
+    - SAUCE: hio: set bi_error field to signal an I/O error on a BIO
+    - SAUCE: hio: splitting bio in the entry of .make_request_fn
+
+  * hio Ubuntu sauce driver needs porting to 4.8 (LP: #1635594)
+    - SAUCE: import Huawei ES3000_V2 (2.1.0.23)
+    - SAUCE: hio: bio_endio() no longer takes errors arg
+    - SAUCE: hio: blk_queue make_request_fn now returns a blk_qc_t
+    - SAUCE: hio: use alloc_cpumask_var to avoid -Wframe-larger-than
+    - SAUCE: hio: fix mask maybe-uninitialized warning
+    - SAUCE: hio: port to v4.8 base
+    - [config] enable CONFIG_HIO (Huawei ES3000_V2 PCIe SSD driver)
+    - SAUCE: hio: Makefile and Kconfig
+    - [Config] Enforce CONFIG_HIO
+
+  * Miscellaneous Ubuntu changes
+    - rebase to v4.9-rc5
+    - zfs: remove the never implemented aio_fsync file operation
+    - [Config] Disable powerpc64-emb for FTBS
+
+  [ Upstream Kernel Changes ]
+
+  * rebase to v4.9-rc5
+
+ -- Tim Gardner <tim.gardner@canonical.com>  Tue, 08 Nov 2016 08:02:32 -0700
+
+linux (4.9.0-0.1) zesty; urgency=low
+
+  [ Upstream Kernel Changes ]
+
+  * rebase to v4.9-rc4
+    - LP: #1465724
+    - LP: #1535802
+
+ -- Tim Gardner <tim.gardner@canonical.com>  Sun, 16 Oct 2016 21:46:31 -0600
+
+linux (4.9.0-0.0) yakkety; urgency=low
 
   [ Seth Forshee ]
 
