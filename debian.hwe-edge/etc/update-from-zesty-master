@@ -10,7 +10,7 @@ SOURCE_RELEASE_BRANCH=${_SOURCE_RELEASE_BRANCH:=master-next}
 DEBIAN_SOURCE=debian.master
 
 TARGET_RELEASE=xenial
-TARGET_RELEASE_BRANCH=zesty
+TARGET_RELEASE_BRANCH=hwe-edge
 TARGET_RELEASE_NUMBER=16.04
 DEBIAN_TARGET=debian.${TARGET_RELEASE_BRANCH}
 
@@ -147,7 +147,7 @@ git add ${DEBIAN_TARGET}/abi ${DEBIAN_TARGET}/d-i ${DEBIAN_TARGET}/config \
 # Update changelog from the source release changelog. Change the release pocket and ABI.
 #
 cp ${DEBIAN_SOURCE}/changelog ${DEBIAN_TARGET}/changelog
-sed -i -e '1s/'${SOURCE_RELEASE}'.*;/'${TARGET_RELEASE}${POCKET}';/' -e '1s/^linux /linux-lts-'${SOURCE_RELEASE}' /' -e '1s/)/~'${TARGET_RELEASE_NUMBER}'.1)/' ${DEBIAN_TARGET}/changelog
+sed -i -e '1s/'${SOURCE_RELEASE}'.*;/'${TARGET_RELEASE}${POCKET}';/' -e '1s/^linux /linux-'${TARGET_RELEASE_BRANCH}' /' -e '1s/)/~'${TARGET_RELEASE_NUMBER}'.1)/' ${DEBIAN_TARGET}/changelog
 git add ${DEBIAN_TARGET}/changelog
 
 #
