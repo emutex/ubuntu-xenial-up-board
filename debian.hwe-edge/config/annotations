@@ -8672,7 +8672,7 @@ CONFIG_RCU_EXPERT                               flag<REVIEW>
 # Menu: General setup >> Stack Protector buffer overflow detection
 CONFIG_CC_STACKPROTECTOR_NONE                   policy<{'amd64': 'n', 'arm64': 'n', 'armhf': 'n', 'i386': 'n', 'powerpc-generic': 'n', 'powerpc-powerpc64-emb': 'n', 'powerpc-powerpc-e500mc': 'n', 'powerpc-powerpc-smp': 'y', 'ppc64el': 'n'}>
 CONFIG_CC_STACKPROTECTOR_REGULAR                policy<{'amd64': 'n', 'arm64': 'n', 'armhf': 'n', 'i386': 'n', 'powerpc': 'n', 'ppc64el': 'n'}>
-CONFIG_CC_STACKPROTECTOR_REGULAR                 policy<{'amd64': 'y', 'arm64': 'y', 'armhf': 'y', 'i386': 'y'}>
+CONFIG_CC_STACKPROTECTOR_STRONG                 policy<{'amd64': 'y', 'arm64': 'y', 'armhf': 'y', 'i386': 'y'}>
 
 # Menu: General setup >> Stack Protector buffer overflow detection >> Architecture: arm
 
@@ -11333,5 +11333,7 @@ CONFIG_APPLDATA_NET_SUM                         policy<{'s390x': 'm'}>
 #CONFIG_PPC_EPAPR_HV_BYTECHAN			n flag<BUILD FAILURE> note<FTBFS on ppc64el>
 
 CONFIG_ARM64_ERRATUM_843419			policy<{'arm64': 'y'}>
+CONFIG_QCOM_QDF2400_ERRATUM_0065		policy<{'arm64': 'y'}>
 #
 CONFIG_ARM64_ERRATUM_843419			mark<ENFORCED> note<LP#1647793>
+CONFIG_QCOM_QDF2400_ERRATUM_0065		mark<ENFORCED> note<LP#1672486>
