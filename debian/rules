@@ -147,7 +147,6 @@ $(DEBIAN)/control.stub: 				\
 	        -e 's/ABINUM/$(abinum)/g'                                       \
 		-e 's/SRCPKGNAME/$(src_pkg_name)/g'                             \
 		-e 's/=HUMAN=/$(human_arch)/g'                                    \
-		| sed -e '/^Architecture:/s@ powerpc@ invalid@g' \
 	  > $$new;								\
 	done
 	flavours="$(sort $(wildcard $(DEBIAN)/control.d/vars.* $(DEBIAN)/sub-flavours/*.vars))";\
@@ -157,7 +156,6 @@ $(DEBIAN)/control.stub: 				\
 		-e 's/ABINUM/$(abinum)/g'                                       \
 		-e 's/SRCPKGNAME/$(src_pkg_name)/g'                             \
 		-e 's/=HUMAN=/$(human_arch)/g'                                    \
-		| sed -e '/^Architecture:/s@ powerpc@ invalid@g' \
 		>> $(DEBIAN)/control.stub;						\
 	done
 
