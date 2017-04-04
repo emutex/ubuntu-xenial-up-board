@@ -107,7 +107,7 @@ rsync -av --delete ${DEBIAN_SOURCE}/config/ ${DEBIAN_TARGET}/config
 #
 # Update package and DTB settings from master.
 #
-rsync -av ${DEBIAN_SOURCE}/rules.d/*.mk ${DEBIAN_TARGET}/rules.d/
+rsync -av --delete ${DEBIAN_SOURCE}/rules.d/*.mk ${DEBIAN_TARGET}/rules.d/
 
 #
 # Update modprobe.d from master
