@@ -1,9 +1,20 @@
-linux-hwe-edge (4.10.0-19.21~16.04.1) xenial; urgency=low
+linux-hwe-edge (4.10.0-20.22~16.04.1) xenial; urgency=low
+
+  * linux-hwe-edge: 4.10.0-20.22~16.04.1 -proposed tracker (LP: #1684492)
+  * linux: 4.10.0-20.22 -proposed tracker (LP: #1684491)
+
+  * [Hyper-V] hv: util: move waiting for release to hv_utils_transport itself
+    (LP: #1682561)
+    - Drivers: hv: util: move waiting for release to hv_utils_transport itself
+
+ -- Stefan Bader <stefan.bader@canonical.com>  Wed, 19 Apr 2017 16:13:16 +0200
+
+linux (4.10.0-19.21) zesty; urgency=low
 
   [ Tim Gardner ]
 
   * Release Tracking Bug
-    - LP: #1680739
+    - LP: #1680535
 
   * ADT regressions caused by "audit: fix auditd/kernel connection state
     tracking" (LP: #1680532)
