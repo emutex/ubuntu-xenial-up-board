@@ -1,6 +1,12 @@
-linux-hwe-edge (4.10.0-22.24~16.04.1) xenial; urgency=low
+linux-hwe-edge (4.10.0-24.28~16.04.1) xenial; urgency=low
 
-  * linux-hwe-edge: 4.10.0-22.24~16.04.1 -proposed tracker (LP: #1691149)
+  * CVE-2017-1000364
+    - mm: enlarge stack guard gap
+    - mm: do not collapse stack gap into THP
+
+ -- Stefan Bader <stefan.bader@canonical.com>  Thu, 08 Jun 2017 12:12:07 +0200
+
+linux (4.10.0-22.24) zesty; urgency=low
 
   * linux: 4.10.0-22.24 -proposed tracker (LP: #1691146)
 
