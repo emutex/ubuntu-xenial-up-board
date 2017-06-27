@@ -1,6 +1,20 @@
-linux-hwe-edge (4.10.0-25.29~16.04.1) xenial; urgency=low
+linux-hwe-edge (4.10.0-26.30~16.04.1) xenial; urgency=low
 
-  * linux-hwe-edge: 4.10.0-25.29~16.04.1 -proposed tracker (LP: #1699029)
+  * linux-hwe-edge: 4.10.0-26.30~16.04.1 -proposed tracker (LP: #1700530)
+
+  * linux: 4.10.0-26.30 -proposed tracker (LP: #1700528)
+
+  * CVE-2017-1000364
+    - Revert "UBUNTU: SAUCE: mm: Only expand stack if guard area is hit"
+    - Revert "mm: do not collapse stack gap into THP"
+    - Revert "mm: enlarge stack guard gap"
+    - mm: larger stack guard gap, between vmas
+    - mm: fix new crash in unmapped_area_topdown()
+    - Allow stack to grow up to address space limit
+
+ -- Stefan Bader <stefan.bader@canonical.com>  Tue, 27 Jun 2017 11:19:43 +0200
+
+linux (4.10.0-25.29) zesty; urgency=low
 
   * linux: 4.10.0-25.29 -proposed tracker (LP: #1699028)
 
