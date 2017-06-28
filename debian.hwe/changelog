@@ -1,6 +1,12 @@
 linux-hwe (4.10.0-27.30~16.04.1) xenial; urgency=low
 
-  * linux-hwe: 4.10.0-26.30~16.04.1 -proposed tracker (LP: #1700530)
+  * bump ABI to avoid binary file clashes with existing linux-hwe-edge
+
+  * transition linux-hwe-edge to linux-hwe for the point release
+
+  * linux-hwe-edge: 4.10.0-26.30~16.04.1 -proposed tracker (LP: #1700530)
+
+  * d-i: Add hibmc-drm to kernel-image udeb (LP: #1698954)
 
   * linux: 4.10.0-26.30 -proposed tracker (LP: #1700528)
 
