@@ -1,14 +1,13 @@
-linux-hwe (4.10.0-27.30~16.04.1) xenial; urgency=low
+linux-hwe (4.10.0-27.30~16.04.2) xenial; urgency=low
 
-  * bump ABI to avoid binary file clashes with existing linux-hwe-edge
+  * Transition from linux-hwe-edge to linux-hwe:
+    - linux-hwe: 4.10.0-27.30~16.04.2 -proposed tracker (LP: #1701306)
+    - bump ABI to avoid binary file clashes with existing linux-hwe-edge
+    - transition linux-hwe-edge to linux-hwe for the point release
+    - switch up powerpc TOC. to match the version in yakkety
 
-  * transition linux-hwe-edge to linux-hwe for the point release
-
-  * linux-hwe-edge: 4.10.0-26.30~16.04.1 -proposed tracker (LP: #1700530)
-
-  * d-i: Add hibmc-drm to kernel-image udeb (LP: #1698954)
-
-  * linux: 4.10.0-26.30 -proposed tracker (LP: #1700528)
+  * HiSilicon D05: installer doesn't appear on VGA (LP: #1698954)
+   - d-i: Add hibmc-drm to kernel-image udeb
 
   * CVE-2017-1000364
     - Revert "UBUNTU: SAUCE: mm: Only expand stack if guard area is hit"
@@ -18,7 +17,7 @@ linux-hwe (4.10.0-27.30~16.04.1) xenial; urgency=low
     - mm: fix new crash in unmapped_area_topdown()
     - Allow stack to grow up to address space limit
 
- -- Stefan Bader <stefan.bader@canonical.com>  Tue, 27 Jun 2017 11:19:43 +0200
+ -- Andy Whitcroft <apw@canonical.com>  Thu, 29 Jun 2017 16:49:56 +0100
 
 linux (4.10.0-25.29) zesty; urgency=low
 
