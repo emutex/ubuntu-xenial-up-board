@@ -51,7 +51,7 @@ CONFIG_64BIT                                    policy<{'amd64': 'y', 'arm64': '
 # Menu: Boot options
 CONFIG_CMDLINE                                  policy<{'arm64': '"console=ttyAMA0"', 'armhf': '""'}>
 CONFIG_KEXEC                                    policy<{'amd64': 'y', 'arm64': 'y', 'armhf': 'y', 'i386': 'y', 'ppc64el': 'y', 's390x': 'y'}>
-CONFIG_CRASH_DUMP                               policy<{'amd64': 'y', 'armhf': 'y', 'i386': 'y', 'ppc64el': 'y', 's390x': 'y'}>
+CONFIG_CRASH_DUMP                               policy<{'amd64': 'y', 'arm64': 'y', 'armhf': 'y', 'i386': 'y', 'ppc64el': 'y', 's390x': 'y'}>
 CONFIG_EFI                                      policy<{'amd64': 'y', 'arm64': 'y', 'armhf': 'n', 'i386': 'y'}>
 #
 CONFIG_CRASH_DUMP                               mark<ENFORCED> note<LP:1363180>
@@ -10181,8 +10181,8 @@ CONFIG_PPC_ICSWX                                flag<REVIEW>
 CONFIG_GENERIC_CPU                              policy<{'amd64': 'y'}>
 
 # Menu: Processor support >> CPU selection >> Architecture: powerpc
-CONFIG_POWER7_CPU                               policy<{'ppc64el': 'y'}>
-CONFIG_POWER8_CPU                               policy<{'ppc64el': 'n'}>
+CONFIG_POWER7_CPU                               policy<{'ppc64el': 'n'}>
+CONFIG_POWER8_CPU                               policy<{'ppc64el': 'y'}>
 
 # Menu: Processor support >> Processor Type >> Architecture: powerpc
 CONFIG_PPC_BOOK3S_64                            policy<{'ppc64el': 'y'}>
