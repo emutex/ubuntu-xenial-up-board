@@ -1,6 +1,10 @@
-linux-hwe (4.10.0-28.32~16.04.1) xenial; urgency=low
+linux-hwe (4.10.0-28.32~16.04.2) xenial; urgency=low
 
-  * linux-hwe: 4.10.0-28.32~16.04.1 -proposed tracker (LP: #1703532)
+  * linux-hwe: 4.10.0-28.32~16.04.2 -proposed tracker (LP: #1703532)
+
+  * CVE-2017-1000364
+    - mm/mmap.c: do not blow on PROT_NONE MAP_FIXED holes in the stack
+    - mm/mmap.c: expand_downwards: don't require the gap if !vm_prev
 
   * KILLER1435-S[0489:e0a2] BT cannot search BT 4.0 device (LP: #1699651)
     - Bluetooth: btusb: Add support for 0489:e0a2 QCA_ROME device
@@ -160,7 +164,7 @@ linux-hwe (4.10.0-28.32~16.04.1) xenial; urgency=low
     (LP: #1696445)
     - scsi: ses: don't get power status of SES device slot on probe
 
- -- Juerg Haefliger <juerg.haefliger@canonical.com>  Thu, 29 Jun 2017 11:14:43 +0200
+ -- Andy Whitcroft <apw@canonical.com>  Thu, 20 Jul 2017 10:49:25 +0100
 
 linux (4.10.0-26.30) zesty; urgency=low
 
