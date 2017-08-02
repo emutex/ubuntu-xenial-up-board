@@ -1,6 +1,11 @@
-linux-hwe (4.10.0-29.33~16.04.1) xenial; urgency=low
+linux-hwe (4.10.0-30.34~16.04.1) xenial; urgency=low
 
-  * linux-hwe: 4.10.0-29.33~16.04.1 -proposed tracker (LP: #1704962)
+  * CVE-2017-7533
+    - dentry name snapshots
+
+ -- Thadeu Lima de Souza Cascardo <cascardo@canonical.com>  Mon, 31 Jul 2017 14:27:53 -0300
+
+linux (4.10.0-29.33) zesty; urgency=low
 
   * linux: 4.10.0-29.33 -proposed tracker (LP: #1704961)
 
