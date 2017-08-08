@@ -1,4 +1,16 @@
-linux-hwe (4.10.0-30.34~16.04.1) xenial; urgency=low
+linux-hwe (4.10.0-32.36~16.04.1) xenial; urgency=low
+
+  * CVE-2017-1000112
+    - udp: avoid ufo handling on IP payload compression packets
+    - net: account for current skb length when deciding about UFO
+    - udp: consistently apply ufo or fragmentation
+
+  * CVE-2017-1000111
+    - net-packet: fix race in packet_set_ring on PACKET_RESERVE
+
+ -- Stefan Bader <stefan.bader@canonical.com>  Mon, 07 Aug 2017 12:54:42 +0200
+
+linux (4.10.0-30.34) zesty; urgency=low
 
   * CVE-2017-7533
     - dentry name snapshots
