@@ -1065,7 +1065,7 @@ CONFIG_EDAC_DEBUG                               policy<{'amd64': 'n', 'arm64': '
 CONFIG_EDAC_DECODE_MCE                          policy<{'amd64': 'm', 'i386': 'm'}>
 
 # Menu: Device Drivers >> EDAC (Error Detection And Correction) reporting >> Main Memory EDAC (Error Detection And Correction) reporting
-CONFIG_EDAC_MM_EDAC                             policy<{'amd64': 'm', 'arm64': 'm', 'armhf': 'm', 'i386': 'm', 'ppc64el': 'm'}>
+CONFIG_EDAC_MM_EDAC                             policy<{'amd64': 'm', 'arm64': 'y', 'armhf': 'm', 'i386': 'm', 'ppc64el': 'm'}>
 CONFIG_EDAC_AMD64                               policy<{'amd64': 'm', 'i386': 'm'}>
 CONFIG_EDAC_AMD64_ERROR_INJECTION               policy<{'amd64': 'n', 'i386': 'n'}>
 CONFIG_EDAC_AMD76X                              policy<{'i386': 'm'}>
@@ -1091,6 +1091,8 @@ CONFIG_EDAC_CPC925                              policy<{'ppc64el': 'm'}>
 CONFIG_EDAC_HIGHBANK_MC                         policy<{'armhf': 'm'}>
 CONFIG_EDAC_HIGHBANK_L2                         policy<{'armhf': 'm'}>
 CONFIG_EDAC_XGENE                               policy<{'arm64': 'm'}>
+#
+CONFIG_EDAC_MM_EDAC                             note<LP:1706141>
 
 # Menu: Device Drivers >> EDAC (Error Detection And Correction) reporting >> Main Memory EDAC (Error Detection And Correction) reporting >> Altera SOCFPGA ECC
 
@@ -4686,7 +4688,7 @@ CONFIG_HNS_ENET                                 policy<{'arm64': 'm', 'armhf': '
 
 # Menu: Device Drivers >> Network device support >> Ethernet driver support >> IBM devices
 CONFIG_NET_VENDOR_IBM                           policy<{'ppc64el': 'y'}>
-CONFIG_IBMVETH                                  policy<{'ppc64el': 'y'}>
+CONFIG_IBMVETH                                  policy<{'ppc64el': 'm'}>
 CONFIG_IBMVNIC                                  policy<{'ppc64el': 'm'}>
 #
 CONFIG_IBMVNIC                            	mark<ENFORCED> note<LP:#1628187>
@@ -6102,7 +6104,7 @@ CONFIG_ATA_PIIX                                 policy<{'amd64': 'y', 'arm64': '
 CONFIG_SATA_DWC                                 policy<{'amd64': 'm', 'arm64': 'm', 'armhf': 'm', 'i386': 'm', 'ppc64el': 'm'}>
 CONFIG_SATA_DWC_OLD_DMA                         policy<{'amd64': 'y', 'arm64': 'y', 'armhf': 'y', 'i386': 'y', 'ppc64el': 'y'}>
 CONFIG_SATA_DWC_DEBUG                           policy<{'amd64': 'n', 'arm64': 'n', 'armhf': 'n', 'i386': 'n', 'ppc64el': 'n'}>
-CONFIG_SATA_HIGHBANK                            policy<{'armhf': 'm'}>
+CONFIG_SATA_HIGHBANK                            policy<{'armhf': 'y'}>
 CONFIG_SATA_MV                                  policy<{'amd64': 'm', 'arm64': 'm', 'armhf': 'm', 'i386': 'm', 'ppc64el': 'm'}>
 CONFIG_SATA_NV                                  policy<{'amd64': 'm', 'arm64': 'm', 'armhf': 'm', 'i386': 'm', 'ppc64el': 'm'}>
 CONFIG_SATA_PROMISE                             policy<{'amd64': 'm', 'arm64': 'm', 'armhf': 'm', 'i386': 'm', 'ppc64el': 'm'}>
@@ -6156,6 +6158,7 @@ CONFIG_PATA_WINBOND                             policy<{'amd64': 'm', 'arm64': '
 CONFIG_PATA_ACPI                                policy<{'amd64': 'm', 'arm64': 'm', 'i386': 'm'}>
 CONFIG_ATA_GENERIC                              policy<{'amd64': 'y', 'arm64': 'm', 'armhf': 'm', 'i386': 'y', 'ppc64el': 'm'}>
 #
+CONFIG_SATA_HIGHBANK                            mark<ENFORCED> note<LP:1703430>
 CONFIG_PATA_HPT3X3_DMA                          note<DMA mode is documented problematic>
 CONFIG_ATA_PIIX					mark<ENFORCED> note<LP:1627324>
 
