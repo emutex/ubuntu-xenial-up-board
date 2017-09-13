@@ -1,6 +1,19 @@
-linux-hwe (4.10.0-34.38~16.04.1) xenial; urgency=low
+linux-hwe (4.10.0-35.39~16.04.1) xenial; urgency=low
 
-  * linux-hwe: 4.10.0-34.38~16.04.1 -proposed tracker (LP: #1713471)
+  * linux-hwe: 4.10.0-35.39~16.04.1 -proposed tracker (LP: #1716608)
+
+  * linux: 4.10.0-35.39 -proposed tracker (LP: #1716606)
+
+  * kernel panic -not syncing: Fatal exception: panic_on_oops (LP: #1708399)
+    - SAUCE: s390/mm: fix local TLB flushing vs. detach of an mm address space
+    - SAUCE: s390/mm: fix race on mm->context.flush_mm
+
+  * CVE-2017-1000251
+    - Bluetooth: Properly check L2CAP config option output buffer length
+
+ -- Stefan Bader <stefan.bader@canonical.com>  Wed, 13 Sep 2017 10:43:25 +0200
+
+linux (4.10.0-34.38) zesty; urgency=low
 
   * linux: 4.10.0-34.38 -proposed tracker (LP: #1713470)
 
