@@ -1,6 +1,57 @@
-linux-hwe (4.10.0-35.39~16.04.1) xenial; urgency=low
+linux-hwe (4.10.0-36.40~16.04.1) xenial; urgency=low
 
-  * linux-hwe: 4.10.0-35.39~16.04.1 -proposed tracker (LP: #1716608)
+  * linux-hwe: 4.10.0-36.40~16.04.1 -proposed tracker (LP: #1718145)
+
+  * linux: 4.10.0-36.40 -proposed tracker (LP: #1718143)
+
+  * Neighbour confirmation broken, breaks ARP cache aging (LP: #1715812)
+    - sock: add sk_dst_pending_confirm flag
+    - net: add dst_pending_confirm flag to skbuff
+    - sctp: add dst_pending_confirm flag
+    - tcp: replace dst_confirm with sk_dst_confirm
+    - net: add confirm_neigh method to dst_ops
+    - net: use dst_confirm_neigh for UDP, RAW, ICMP, L2TP
+    - net: pending_confirm is not used anymore
+
+  * SRIOV: warning if unload VFs (LP: #1715073)
+    - PCI: Lock each enable/disable num_vfs operation in sysfs
+    - PCI: Disable VF decoding before pcibios_sriov_disable() updates resources
+
+  * Kernel has troule recognizing Corsair Strafe RGB keyboard (LP: #1678477)
+    - usb: quirks: add delay init quirk for Corsair Strafe RGB keyboard
+
+  * CVE-2017-14106
+    - tcp: initialize rcv_mss to TCP_MIN_MSS instead of 0
+
+  * [CIFS] Fix maximum SMB2 header size (LP: #1713884)
+    - CIFS: Fix maximum SMB2 header size
+
+  * Middle button of trackpoint doesn't work (LP: #1715271)
+    - Input: trackpoint - assume 3 buttons when buttons detection fails
+
+  * Drop GPL from of_node_to_nid() export to match other arches (LP: #1709179)
+    - powerpc: Drop GPL from of_node_to_nid() export to match other arches
+
+  * vhost guest network randomly drops under stress (kvm) (LP: #1711251)
+    - Revert "vhost: cache used event for better performance"
+
+  * arm64 arch_timer fixes (LP: #1713821)
+    - Revert "UBUNTU: SAUCE: arm64: arch_timer: Enable CNTVCT_EL0 trap if
+      workaround is enabled"
+    - arm64: arch_timer: Enable CNTVCT_EL0 trap if workaround is enabled
+    - clocksource/arm_arch_timer: Fix arch_timer_mem_find_best_frame()
+    - clocksource/drivers/arm_arch_timer: Fix read and iounmap of incorrect
+      variable
+    - clocksource/drivers/arm_arch_timer: Fix mem frame loop initialization
+    - clocksource/drivers/arm_arch_timer: Avoid infinite recursion when ftrace is
+      enabled
+
+  * Touchpad not detected (LP: #1708852)
+    - Input: elan_i2c - add ELAN0608 to the ACPI table
+
+ -- Kleber Sacilotto de Souza <kleber.souza@canonical.com>  Tue, 19 Sep 2017 15:00:43 +0200
+
+linux (4.10.0-35.39) zesty; urgency=low
 
   * linux: 4.10.0-35.39 -proposed tracker (LP: #1716606)
 
@@ -11,7 +62,7 @@ linux-hwe (4.10.0-35.39~16.04.1) xenial; urgency=low
   * CVE-2017-1000251
     - Bluetooth: Properly check L2CAP config option output buffer length
 
- -- Stefan Bader <stefan.bader@canonical.com>  Wed, 13 Sep 2017 10:43:25 +0200
+ -- Juerg Haefliger <juerg.haefliger@canonical.com>  Wed, 13 Sep 2017 08:15:17 +0200
 
 linux (4.10.0-34.38) zesty; urgency=low
 
