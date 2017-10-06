@@ -1,6 +1,13 @@
-linux-hwe (4.10.0-36.40~16.04.1) xenial; urgency=low
+linux-hwe (4.10.0-37.41~16.04.1) xenial; urgency=low
 
-  * linux-hwe: 4.10.0-36.40~16.04.1 -proposed tracker (LP: #1718145)
+  * CVE-2017-1000255
+    - SAUCE: powerpc/64s: Use emergency stack for kernel TM Bad Thing program
+      checks
+    - SAUCE: powerpc/tm: Fix illegal TM state in signal handler
+
+ -- Thadeu Lima de Souza Cascardo <cascardo@canonical.com>  Fri, 06 Oct 2017 16:45:48 -0300
+
+linux (4.10.0-36.40) zesty; urgency=low
 
   * linux: 4.10.0-36.40 -proposed tracker (LP: #1718143)
 
@@ -49,7 +56,7 @@ linux-hwe (4.10.0-36.40~16.04.1) xenial; urgency=low
   * Touchpad not detected (LP: #1708852)
     - Input: elan_i2c - add ELAN0608 to the ACPI table
 
- -- Kleber Sacilotto de Souza <kleber.souza@canonical.com>  Tue, 19 Sep 2017 15:00:43 +0200
+ -- Kleber Sacilotto de Souza <kleber.souza@canonical.com>  Tue, 19 Sep 2017 11:36:36 +0200
 
 linux (4.10.0-35.39) zesty; urgency=low
 
