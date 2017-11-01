@@ -1,6 +1,32 @@
-linux-hwe (4.10.0-38.42~16.04.1) xenial; urgency=low
+linux-hwe (4.10.0-39.43~16.04.1) xenial; urgency=low
 
-  * linux-hwe: 4.10.0-38.42~16.04.1 -proposed tracker (LP: #1722331)
+  * linux-hwe: 4.10.0-39.43~16.04.1 -proposed tracker (LP: #1728971)
+
+  * linux: 4.10.0-39.43 -proposed tracker (LP: #1728969)
+
+  * powerpc/64s: Add workaround for P9 vector CI load issue (LP: #1721070)
+    - powerpc/64s: Fix system reset vs general interrupt reentrancy
+    - powerpc/book3s/mce: Move add_taint() later in virtual mode
+    - powerpc/mce: Move 64-bit machine check code into mce.c
+    - powerpc/64s: Add workaround for P9 vector CI load issue
+
+  * CVE-2017-12188
+    - KVM: nVMX: update last_nonleaf_level when initializing nested EPT
+    - KVM: MMU: always terminate page walks at level 1
+
+  * usb 3-1: 2:1: cannot get freq at ep 0x1 (LP: #1708499)
+    - ALSA: usb-audio: Add sample rate quirk for Plantronics C310/C520-M
+
+  * Plantronics Blackwire C520-M - Cannot get freq at ep 0x1, 0x81
+    (LP: #1709282)
+    - ALSA: usb-audio: Add sample rate quirk for Plantronics C310/C520-M
+
+  * Middle button of trackpoint doesn't work (LP: #1715271)
+    - Input: trackpoint - add new trackpoint firmware ID
+
+ -- Kleber Sacilotto de Souza <kleber.souza@canonical.com>  Wed, 01 Nov 2017 16:44:02 +0100
+
+linux (4.10.0-38.42) zesty; urgency=low
 
   * linux: 4.10.0-38.42 -proposed tracker (LP: #1722330)
 
@@ -102,7 +128,7 @@ linux-hwe (4.10.0-38.42~16.04.1) xenial; urgency=low
   * [SRU][Zesty] Fix lscpu segfault on ARM64 with SMBIOS v2.0 (LP: #1716483)
     - arm64: kernel: restrict /dev/mem read() calls to linear region
 
- -- Kleber Sacilotto de Souza <kleber.souza@canonical.com>  Tue, 10 Oct 2017 17:32:31 +0200
+ -- Kleber Sacilotto de Souza <kleber.souza@canonical.com>  Tue, 10 Oct 2017 13:49:34 +0200
 
 linux (4.10.0-37.41) zesty; urgency=low
 
