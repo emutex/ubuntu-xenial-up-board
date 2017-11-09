@@ -1,6 +1,15 @@
-linux-hwe (4.10.0-39.43~16.04.1) xenial; urgency=low
+linux-hwe (4.10.0-40.44~16.04.1) xenial; urgency=low
 
-  * linux-hwe: 4.10.0-39.43~16.04.1 -proposed tracker (LP: #1728971)
+  * linux-hwe: 4.10.0-40.44~16.04.1 -proposed tracker (LP: #1731270)
+
+  * linux: 4.10.0-40.44 -proposed tracker (LP: #1731269)
+
+  * s390/mm: fix write access check in gup_huge_pmd() (LP: #1730596)
+    - s390/mm: fix write access check in gup_huge_pmd()
+
+ -- Kleber Sacilotto de Souza <kleber.souza@canonical.com>  Thu, 09 Nov 2017 16:18:08 +0100
+
+linux (4.10.0-39.43) zesty; urgency=low
 
   * linux: 4.10.0-39.43 -proposed tracker (LP: #1728969)
 
@@ -24,7 +33,7 @@ linux-hwe (4.10.0-39.43~16.04.1) xenial; urgency=low
   * Middle button of trackpoint doesn't work (LP: #1715271)
     - Input: trackpoint - add new trackpoint firmware ID
 
- -- Kleber Sacilotto de Souza <kleber.souza@canonical.com>  Wed, 01 Nov 2017 16:44:02 +0100
+ -- Kleber Sacilotto de Souza <kleber.souza@canonical.com>  Wed, 01 Nov 2017 12:39:55 +0100
 
 linux (4.10.0-38.42) zesty; urgency=low
 
