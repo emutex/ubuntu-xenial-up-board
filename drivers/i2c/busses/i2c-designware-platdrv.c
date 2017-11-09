@@ -320,6 +320,10 @@ static int dw_i2c_plat_probe(struct platform_device *pdev)
 	if (r && !dev->pm_runtime_disabled)
 		pm_runtime_disable(&pdev->dev);
 
+	dev_info(&pdev->dev,
+			"I2C_DESIGNWARE %d Controller at 0x%08lx (irq %d) (baudrate %d)",
+			pdev->id_auto, (unsigned long) mem->start, irq, dev->clk_freq);
+
 	return r;
 }
 
