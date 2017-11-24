@@ -1,13 +1,52 @@
-linux-hwe (4.10.0-40.44~16.04.1) xenial; urgency=low
+linux-hwe (4.10.0-41.45~16.04.1) xenial; urgency=low
 
-  * linux-hwe: 4.10.0-40.44~16.04.1 -proposed tracker (LP: #1731270)
+  * linux-hwe: 4.10.0-41.45~16.04.1 -proposed tracker (LP: #1733528)
+
+  * linux: 4.10.0-41.45 -proposed tracker (LP: #1733524)
+
+  * tar -x sometimes fails on overlayfs (LP: #1728489)
+    - ovl: check if all layers are on the same fs
+    - ovl: persistent inode number for directories
+
+  * CVE-2017-12146
+    - driver core: platform: fix race condition with driver_override
+
+  * NVMe timeout is too short (LP: #1729119)
+    - nvme: update timeout module parameter type
+
+  * Set PANIC_TIMEOUT=10 on Power Systems (LP: #1730660)
+    - [Config]: Set PANIC_TIMEOUT=10 on ppc64el
+
+  * Cannot pair BLE remote devices when using combo BT SoC (LP: #1731467)
+    - Bluetooth: increase timeout for le auto connections
+
+  * Plantronics P610 does not support sample rate reading (LP: #1719853)
+    - ALSA: usb-audio: Add sample rate quirk for Plantronics P610
+
+  * Invalid btree pointer causes the kernel NULL pointer dereference
+    (LP: #1729256)
+    - xfs: reinit btree pointer on attr tree inactivation walk
+
+  * Samba mount/umount in docker container triggers kernel Oops (LP: #1729637)
+    - ipv6: only call ip6_route_dev_notify() once for NETDEV_UNREGISTER
+    - ipv6: fix NULL dereference in ip6_route_dev_notify()
+
+  * Device hotplugging with MPT SAS cannot work for VMWare ESXi (LP: #1730852)
+    - scsi: mptsas: Fixup device hotplug for VMWare ESXi
+
+  * Boot/Installation crash of Ubuntu-16.04.3 HWE kernel on R940 (LP: #1719697)
+    - Revert "x86/acpi: Set persistent cpuid <-> nodeid mapping when booting"
+
+ -- Khalid Elmously <khalid.elmously@canonical.com>  Tue, 21 Nov 2017 11:05:28 -0500
+
+linux (4.10.0-40.44) zesty; urgency=low
 
   * linux: 4.10.0-40.44 -proposed tracker (LP: #1731269)
 
   * s390/mm: fix write access check in gup_huge_pmd() (LP: #1730596)
     - s390/mm: fix write access check in gup_huge_pmd()
 
- -- Kleber Sacilotto de Souza <kleber.souza@canonical.com>  Thu, 09 Nov 2017 16:18:08 +0100
+ -- Kleber Sacilotto de Souza <kleber.souza@canonical.com>  Thu, 09 Nov 2017 15:24:07 +0100
 
 linux (4.10.0-39.43) zesty; urgency=low
 
