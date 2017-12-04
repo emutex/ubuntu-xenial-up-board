@@ -1,6 +1,18 @@
-linux-hwe (4.10.0-41.45~16.04.1) xenial; urgency=low
+linux-hwe (4.10.0-42.46~16.04.1) xenial; urgency=low
 
-  * linux-hwe: 4.10.0-41.45~16.04.1 -proposed tracker (LP: #1733528)
+  * linux-hwe: 4.10.0-42.46~16.04.1 -proposed tracker (LP: #1736154)
+
+  * linux: 4.10.0-42.46 -proposed tracker (LP: #1736152)
+
+  * CVE-2017-1000405
+    - mm, thp: Do not make page table dirty unconditionally in touch_p[mu]d()
+
+  * CVE-2017-16939
+    - ipsec: Fix aborted xfrm policy dump crash
+
+ -- Stefan Bader <stefan.bader@canonical.com>  Mon, 04 Dec 2017 15:04:01 +0100
+
+linux (4.10.0-41.45) zesty; urgency=low
 
   * linux: 4.10.0-41.45 -proposed tracker (LP: #1733524)
 
